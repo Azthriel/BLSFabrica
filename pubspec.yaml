@@ -1,0 +1,59 @@
+name: biocaldensmartlifefabrica
+description: "A multitool app"
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.1 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  http: ^1.1.2
+  fluttertoast: ^8.2.4
+  path_provider: ^2.1.1
+  share: ^2.0.4
+  firebase_core: ^2.24.0
+  cloud_firestore: ^4.13.3
+  permission_handler: ^11.1.0
+  flutter_blue_plus: ^1.30.3
+  easy_refresh: ^3.3.2+4
+  qr_code_scanner: ^1.0.1
+  mqtt_client: ^10.0.2
+  intl: ^0.19.0
+  material_design_icons_flutter: ^7.0.7296
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^3.0.0
+  icons_launcher: ^2.1.7
+
+
+icons_launcher:
+  image_path: 'assets/Fabrica/logo.png'
+  platforms:
+    ios:
+      enable: true
+      image_path: 'assets/Fabrica/logo.png'
+    android:
+      enable: true
+      image_path: 'assets/Fabrica/logo.png'
+      adaptive_background_image: 'assets/Fabrica/Background.png'
+      adaptive_foreground_image: 'assets/Fabrica/Foreground.png'
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/Biocalden/Biocalden_banner.png
+    - assets/Biocalden/Corte_laser_negro.png
+    - assets/Biocalden/B_negra.png
+    - assets/IntelligentGas/IntelligentGasFlyerCL.png
+    - assets/IntelligentGas/IntelligentGasFlyerSL.png
+    - assets/IntelligentGas/G.png
+    - assets/Silema/WB_logo.png
+    - assets/Silema/WB_Banner.png
+    - assets/Fabrica/logo.png
