@@ -674,8 +674,7 @@ class OtaTabState extends State<OtaTab> {
 
   void sendOTAWifi() async {
     String url =
-        'https://github.com/barberop/sime-domotica/raw/main/${deviceType}_IOT/OTA_FW/$hardwareVersion#$softwareVersion.bin';
-    //https://github.com/barberop/sime-domotica/raw/main/027000_IOT/OTA_FW/240208A%23240223A.bin
+        'https://github.com/barberop/sime-domotica/raw/main/${deviceType}_IOT/OTA_FW/F/hv${hardwareVersion}sv$softwareVersion.bin';
     printLog(url);
     try {
       String data = '${command(deviceType)}[2]($url)';

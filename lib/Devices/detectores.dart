@@ -1579,19 +1579,15 @@ class OTAState extends State<OTAPage> {
     if (value == 0) {
       //ota factory
       url =
-          'https://raw.githubusercontent.com/CrisDores/57_IOT_PUBLIC/main/57_ota_factory_fw/firmware.bin';
+          'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv$softwareVersion.bin';
     } else if (value == 1) {
       //ota work
       url =
-          'https://raw.githubusercontent.com/CrisDores/57_IOT_PUBLIC/main/57_ota_fw/firmware.bin';
+          'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/W/hv${hardwareVersion}sv$softwareVersion.bin';
     } else if (value == 2) {
-      //ota test
-      url =
-          'https://raw.githubusercontent.com/CrisDores/57_IOT_PUBLIC/main/test_zone/firmware.bin';
-    } else if (value == 3) {
       //ota pic
       url =
-          'https://raw.githubusercontent.com/CrisDores/57_IOT_PUBLIC/main/57_ota_factory_fw/firmware.hex';
+          'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv$softwareVersion.hex';
       otaPIC = true;
     }
 
@@ -1628,10 +1624,10 @@ class OTAState extends State<OTAPage> {
     String url = '';
     if (value == 0) {
       url =
-          'https://raw.githubusercontent.com/CrisDores/57_IOT_PUBLIC/main/57_ota_factory_fw/firmware.bin';
+          'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv$softwareVersion.bin';
     } else if (value == 1) {
       url =
-          'https://raw.githubusercontent.com/CrisDores/57_IOT_PUBLIC/main/57_ota_fw/firmware.bin';
+          'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/W/hv${hardwareVersion}sv$softwareVersion.bin';
     }
 
     if (sizeWasSend == false) {
@@ -2071,7 +2067,7 @@ class OTAState extends State<OTAPage> {
               child: ElevatedButton(
                 onPressed: () {
                   otaPIC = true;
-                  sendOTAWifi(3);
+                  sendOTAWifi(2);
                 },
                 style: ButtonStyle(
                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
