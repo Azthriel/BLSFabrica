@@ -300,15 +300,6 @@ class DetectorTabsState extends State<DetectorTabs> {
                                 const SizedBox(height: 10),
                                 ElevatedButton(
                                     onPressed: () {
-                                      Navigator.pop(context);
-                                      Navigator.pushReplacementNamed(
-                                          context, '/disconect');
-                                    },
-                                    child: const Text(
-                                        'Desconectar todos los dispositivos')),
-                                const SizedBox(height: 10),
-                                ElevatedButton(
-                                    onPressed: () {
                                       pikachu.contains('Pika');
                                     },
                                     child: const Text('Crashear app')),
@@ -1567,6 +1558,7 @@ class OTAState extends State<OTAPage> {
   late Uint8List firmwareGlobal;
   bool sizeWasSend = false;
   bool otaPIC = false;
+  TextEditingController otaSVController = TextEditingController();
 
   @override
   void initState() {
@@ -1579,15 +1571,15 @@ class OTAState extends State<OTAPage> {
     if (value == 0) {
       //ota factory
       url =
-          'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv$softwareVersion.bin';
+          'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text}.bin';
     } else if (value == 1) {
       //ota work
       url =
-          'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/W/hv${hardwareVersion}sv$softwareVersion.bin';
+          'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';
     } else if (value == 2) {
       //ota pic
       url =
-          'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv$softwareVersion.hex';
+          'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text}.hex';
       otaPIC = true;
     }
 
@@ -1617,17 +1609,15 @@ class OTAState extends State<OTAPage> {
   }
 
   void sendOTABLE(int value) async {
-    String data = '015773_IOT[7](0)';
-    myDevice.toolsUuid.write(data.codeUnits);
     showToast("Enviando OTA...");
 
     String url = '';
     if (value == 0) {
       url =
-          'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv$softwareVersion.bin';
+          'https://github.com/barberop/sime-domotica/raw/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text}.bin';
     } else if (value == 1) {
       url =
-          'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/W/hv${hardwareVersion}sv$softwareVersion.bin';
+          'https://github.com/barberop/sime-domotica/raw/main/${command(deviceType)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';
     }
 
     if (sizeWasSend == false) {
@@ -1647,15 +1637,8 @@ class OTAState extends State<OTAPage> {
         var firmware = await file.readAsBytes();
         firmwareGlobal = firmware;
 
-        int size = firmware.length;
-
-        var sizeInBytes = [
-          size & 0xFF,
-          (size >> 8) & 0xFF,
-          (size >> 16) & 0xFF,
-          (size >> 24) & 0xFF
-        ];
-        String data = '015773_IOT[3]($sizeInBytes)';
+        String data = '${command(deviceType)}[3](${bytes.length})';
+        printLog(data);
         await myDevice.toolsUuid.write(data.codeUnits);
         sizeWasSend = true;
 
@@ -1698,56 +1681,54 @@ class OTAState extends State<OTAPage> {
       try {
         var fun = utf8.decode(event);
         fun = fun.replaceAll(RegExp(r'[^\x20-\x7E]'), '');
+        printLog(fun);
         var parts = fun.split(':');
-        if (parts[0] == '57_IOT_OTAPR') {
+        if (parts[0] == 'OTAPR') {
           printLog('Se recibio');
           setState(() {
-            if (otaPIC == true) {
-              picprogressValue = int.parse(parts[1]) / 100;
-            } else {
-              progressValue = int.parse(parts[1]) / 100;
-            }
+            progressValue = int.parse(parts[1]) / 100;
           });
           printLog('Progreso: ${parts[1]}');
+        } else if (fun.contains('OTA:HTTP_CODE')) {
+          RegExp exp = RegExp(r'\(([^)]+)\)');
+          final Iterable<RegExpMatch> matches = exp.allMatches(fun);
+
+          for (final RegExpMatch match in matches) {
+            String valorEntreParentesis = match.group(1)!;
+            showToast('HTTP CODE recibido: $valorEntreParentesis');
+          }
         } else {
           switch (fun) {
-            case '57_IOT_OTA:START':
+            case 'OTA:START':
               printLog('Header se recibio correctamente');
               break;
-            case '57_IOT_OTA:SUCCESS':
-              sizeWasSend = false;
-              if (otaPIC == true) {
-                otaPIC = false;
-              } else {
-                printLog('Estreptococo');
-                String data = '57_IOT[7](1)';
-                myDevice.toolsUuid.write(data.codeUnits);
-                navigatorKey.currentState?.pushReplacementNamed('/menu');
-              }
+            case 'OTA:SUCCESS':
+              printLog('Estreptococo');
+              navigatorKey.currentState?.pushReplacementNamed('/menu');
               showToast("OTA completada exitosamente");
               break;
-            case '57_IOT_OTA:FAIL':
+            case 'OTA:FAIL':
               showToast("Fallo al enviar OTA");
               break;
-            case '57_IOT_OTA:OVERSIZE':
+            case 'OTA:OVERSIZE':
               showToast("El archivo es mayor al espacio reservado");
               break;
-            case '57_IOT_OTA:WIFI_LOST':
+            case 'OTA:WIFI_LOST':
               showToast("Se perdió la conexión wifi");
               break;
-            case '57_IOT_OTA:HTTP_LOST':
+            case 'OTA:HTTP_LOST':
               showToast("Se perdió la conexión HTTP durante la actualización");
               break;
-            case '57_IOT_OTA:STREAM_LOST':
+            case 'OTA:STREAM_LOST':
               showToast("Excepción de stream durante la actualización");
               break;
-            case '57_IOT_OTA:NO_WIFI':
+            case 'OTA:NO_WIFI':
               showToast("Dispositivo no conectado a una red Wifi");
               break;
-            case '57_IOT_OTA_HTTP:FAIL':
+            case 'OTA:HTTP_FAIL':
               showToast("No se pudo iniciar una peticion HTTP");
               break;
-            case '57_IOT_OTA:NO_ROLLBACK':
+            case 'OTA:NO_ROLLBACK':
               showToast("Imposible realizar un rollback");
               break;
             default:
@@ -1899,6 +1880,18 @@ class OTAState extends State<OTAPage> {
               ],
             ),
             const SizedBox(height: 20),
+            SizedBox(
+                width: 300,
+                child: TextField(
+                  keyboardType: TextInputType.text,
+                  style: const TextStyle(color: Color(0xfffbe4d8)),
+                  controller: otaSVController,
+                  decoration: const InputDecoration(
+                    labelText: 'Introducir última versión de Software',
+                    labelStyle: TextStyle(color: Color(0xfffbe4d8)),
+                  ),
+                )),
+            const SizedBox(height: 40),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Row(
@@ -1921,11 +1914,9 @@ class OTAState extends State<OTAPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.build,
-                                    size: 16, color: Color(0xfffbe4d8)),
+                                Icon(Icons.build, size: 16),
                                 SizedBox(width: 20),
-                                Icon(Icons.wifi,
-                                    size: 16, color: Color(0xfffbe4d8)),
+                                Icon(Icons.wifi, size: 16),
                               ],
                             ),
                             SizedBox(height: 10),
@@ -1959,11 +1950,9 @@ class OTAState extends State<OTAPage> {
                             Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.factory_outlined,
-                                      size: 15, color: Color(0xfffbe4d8)),
+                                  Icon(Icons.factory_outlined, size: 15),
                                   SizedBox(width: 20),
-                                  Icon(Icons.wifi,
-                                      size: 15, color: Color(0xfffbe4d8)),
+                                  Icon(Icons.wifi, size: 15),
                                 ]),
                             SizedBox(height: 10),
                             Text(
@@ -2003,11 +1992,9 @@ class OTAState extends State<OTAPage> {
                             Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.build,
-                                      size: 16, color: Color(0xfffbe4d8)),
+                                  Icon(Icons.build, size: 16),
                                   SizedBox(width: 20),
-                                  Icon(Icons.bluetooth,
-                                      size: 16, color: Color(0xfffbe4d8)),
+                                  Icon(Icons.bluetooth, size: 16),
                                   SizedBox(height: 10),
                                 ]),
                             SizedBox(height: 10),
@@ -2041,11 +2028,9 @@ class OTAState extends State<OTAPage> {
                             Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.factory_outlined,
-                                      size: 15, color: Color(0xfffbe4d8)),
+                                  Icon(Icons.factory_outlined, size: 15),
                                   SizedBox(width: 20),
-                                  Icon(Icons.bluetooth,
-                                      size: 15, color: Color(0xfffbe4d8)),
+                                  Icon(Icons.bluetooth, size: 15),
                                 ]),
                             SizedBox(height: 10),
                             Text(
@@ -2083,11 +2068,9 @@ class OTAState extends State<OTAPage> {
                       Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.memory,
-                                size: 15, color: Color(0xfffbe4d8)),
+                            Icon(Icons.memory, size: 15),
                             SizedBox(width: 20),
-                            Icon(Icons.wifi,
-                                size: 15, color: Color(0xfffbe4d8)),
+                            Icon(Icons.wifi, size: 15),
                           ]),
                       SizedBox(height: 10),
                       Text(

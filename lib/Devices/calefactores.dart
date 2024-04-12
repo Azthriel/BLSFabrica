@@ -1,8 +1,18 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:biocaldensmartlifefabrica/master.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:http/http.dart' as http;
+
+late bool turnOn;
+late double tempValue;
+
+late bool tempMap;
 
 class CalefactoresTab extends StatefulWidget {
   const CalefactoresTab({super.key});
@@ -16,6 +26,11 @@ class CalefactoresTabState extends State<CalefactoresTab> {
     super.initState();
     updateWifiValues(toolsValues);
     subscribeToWifiStatus();
+    var partes = utf8.decode(varsValues).split(':');
+    tempValue = double.parse(partes[0]);
+    turnOn = partes[1] == '1';
+
+    tempMap = partes[6] == '1';
   }
 
   void updateWifiValues(List<int> data) {
@@ -305,12 +320,12 @@ class ToolsPageState extends State<ToolsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: const Color(0xff190019),
-        body: SingleChildScrollView(
-            child: Center(
-                child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+      backgroundColor: const Color(0xff190019),
+      body: SingleChildScrollView(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
               const SizedBox(height: 50),
               const Text.rich(
                 TextSpan(
@@ -386,7 +401,7 @@ class ToolsPageState extends State<ToolsPage> {
                         color: Color(0xFFdfb6b2),
                         fontWeight: FontWeight.bold))),
               ),
-              const SizedBox(height: 50),
+              const SizedBox(height: 40),
               ElevatedButton(
                 onPressed: () => myDevice.toolsUuid
                     .write('${command(deviceType)}[0](1)'.codeUnits),
@@ -399,7 +414,109 @@ class ToolsPageState extends State<ToolsPage> {
                 ),
                 child: const Text('Borrar NVS'),
               ),
-            ]))));
+              const SizedBox(
+                height: 10,
+              ),
+              if (deviceType == '027000') ...[
+                ElevatedButton(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        final TextEditingController cicleController =
+                            TextEditingController();
+                        final TextEditingController timeController =
+                            TextEditingController();
+                        return AlertDialog(
+                          title: const Center(
+                              child: Text(
+                            'Especificar parametros del ciclador:',
+                            style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold),
+                          )),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 300,
+                                child: TextField(
+                                  style: const TextStyle(color: Colors.black),
+                                  controller: cicleController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Ingrese cantidad de ciclos',
+                                    hintText: 'Certificación: 1000',
+                                    labelStyle: TextStyle(color: Colors.black),
+                                    hintStyle: TextStyle(color: Colors.black),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(
+                                height: 20,
+                              ),
+                              SizedBox(
+                                width: 300,
+                                child: TextField(
+                                  style: const TextStyle(color: Colors.black),
+                                  controller: timeController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Ingrese duración de los ciclos',
+                                    hintText: 'Recomendado: 1000',
+                                    suffixText: '(mS)',
+                                    suffixStyle: TextStyle(
+                                      color: Colors.black,
+                                    ),
+                                    labelStyle: TextStyle(
+                                      color: Colors.black,
+                                    ),
+                                    hintStyle: TextStyle(
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                navigatorKey.currentState!.pop();
+                              },
+                              child: const Text('Cancelar'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                int cicle = int.parse(cicleController.text) * 2;
+                                String data =
+                                    '027000_IOT[13](${timeController.text}#$cicle)';
+                                myDevice.toolsUuid.write(data.codeUnits);
+                                navigatorKey.currentState!.pop();
+                              },
+                              child: const Text('Iniciar proceso'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                  style: ButtonStyle(
+                    shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18.0),
+                      ),
+                    ),
+                  ),
+                  child: const Text('Configurar ciclado'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -412,18 +529,36 @@ class TempTab extends StatefulWidget {
 }
 
 class TempTabState extends State<TempTab> {
-  var parts = utf8.decode(varsValues).split(':');
-  late bool turnOn;
-  late double tempValue;
   final TextEditingController roomTempController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    tempValue = double.parse(parts[0]);
-    turnOn = parts[1] == '1';
     printLog('Valor temp: $tempValue');
     printLog('¿Encendido? $turnOn');
+    subscribeTrueStatus();
+    updateChanges();
+  }
+
+  void updateChanges() async {}
+
+  void subscribeTrueStatus() async {
+    printLog('Me subscribo a vars');
+    await myDevice.varsUuid.setNotifyValue(true);
+
+    final trueStatusSub =
+        myDevice.varsUuid.onValueReceived.listen((List<int> status) {
+      var parts = utf8.decode(status).split(':');
+      setState(() {
+        if (parts[0] == '1') {
+          trueStatus = true;
+        } else {
+          trueStatus = false;
+        }
+      });
+    });
+
+    myDevice.device.cancelWhenDisconnected(trueStatusSub);
   }
 
   void sendTemperature(int temp) {
@@ -442,6 +577,11 @@ class TempTabState extends State<TempTab> {
     myDevice.toolsUuid.write(data.codeUnits);
   }
 
+  void startTempMap() {
+    String data = '${command(deviceType)}[12](0)';
+    myDevice.toolsUuid.write(data.codeUnits);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -450,10 +590,22 @@ class TempTabState extends State<TempTab> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text.rich(TextSpan(
-                text: turnOn ? 'Encendido' : 'Apagado',
+            Text.rich(
+              TextSpan(
+                text: turnOn
+                    ? trueStatus
+                        ? 'Calentando'
+                        : 'Encendido'
+                    : 'Apagado',
                 style: TextStyle(
-                    color: turnOn ? Colors.green : Colors.red, fontSize: 30))),
+                    color: turnOn
+                        ? trueStatus
+                            ? Colors.amber[600]
+                            : Colors.green
+                        : Colors.red,
+                    fontSize: 30),
+              ),
+            ),
             const SizedBox(height: 30),
             Transform.scale(
               scale: 3.0,
@@ -509,19 +661,62 @@ class TempTabState extends State<TempTab> {
             ),
             const SizedBox(height: 50),
             SizedBox(
-                width: 300,
-                child: TextField(
-                  style: const TextStyle(color: Color(0xfffbe4d8)),
-                  keyboardType: TextInputType.number,
-                  controller: roomTempController,
-                  decoration: const InputDecoration(
-                    labelText: 'Introducir temperatura de la habitación',
-                    labelStyle: TextStyle(color: Color(0xfffbe4d8)),
+              width: 300,
+              child: TextField(
+                style: const TextStyle(color: Color(0xfffbe4d8)),
+                keyboardType: TextInputType.number,
+                controller: roomTempController,
+                decoration: const InputDecoration(
+                  labelText: 'Introducir temperatura de la habitación',
+                  labelStyle: TextStyle(color: Color(0xfffbe4d8)),
+                ),
+                onSubmitted: (value) {
+                  sendRoomTemperature(value);
+                },
+              ),
+            ),
+            const SizedBox(height: 30),
+            Text.rich(
+              TextSpan(
+                children: [
+                  const TextSpan(
+                    text: '¿Mapeo de temperatura realizado? ',
+                    style: TextStyle(
+                      color: Color(0xfffbe4d8),
+                      fontSize: 20,
+                    ),
                   ),
-                  onSubmitted: (value) {
-                    sendRoomTemperature(value);
-                  },
-                )),
+                  TextSpan(
+                    text: tempMap ? 'SI' : 'NO',
+                    style: TextStyle(
+                      color: tempMap
+                          ? const Color(0xff854f6c)
+                          : const Color(0xffFF0000),
+                      fontSize: 20,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 30),
+            ElevatedButton(
+              onPressed: () {
+                if (!tempMap) {
+                  startTempMap();
+                  showToast('Iniciando mapeo de temperatura');
+                } else {
+                  showToast('Mapeo de temperatura ya realizado');
+                }
+              },
+              style: ButtonStyle(
+                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18.0),
+                  ),
+                ),
+              ),
+              child: const Text('Iniciar mapeo temperatura'),
+            ),
           ],
         ),
       ),
@@ -544,6 +739,14 @@ class CredsTabState extends State<CredsTab> {
   String? amazonCA;
   String? privateKey;
   String? deviceCert;
+  late bool awsInit;
+
+  @override
+  void initState() {
+    super.initState();
+    var parts = utf8.decode(varsValues).split(':');
+    awsInit = parts[5] == '1';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -555,6 +758,30 @@ class CredsTabState extends State<CredsTab> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // const SizedBox(height: 30),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    const TextSpan(
+                      text: '¿El equipo tiene una Thing cargada? ',
+                      style: TextStyle(
+                        color: Color(0xfffbe4d8),
+                        fontSize: 20,
+                      ),
+                    ),
+                    TextSpan(
+                      text: awsInit ? 'SI' : 'NO',
+                      style: TextStyle(
+                        color: awsInit
+                            ? const Color(0xff854f6c)
+                            : const Color(0xffFF0000),
+                        fontSize: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 30),
               SizedBox(
                 width: 300,
                 child: TextField(
@@ -665,6 +892,9 @@ class OtaTabState extends State<OtaTab> {
   var dataReceive = [];
   var dataToShow = 0;
   var progressValue = 0.0;
+  TextEditingController otaSVController = TextEditingController();
+  late Uint8List firmwareGlobal;
+  bool sizeWasSend = false;
 
   @override
   void initState() {
@@ -674,7 +904,7 @@ class OtaTabState extends State<OtaTab> {
 
   void sendOTAWifi() async {
     String url =
-        'https://github.com/barberop/sime-domotica/raw/main/${deviceType}_IOT/OTA_FW/F/hv${hardwareVersion}sv$softwareVersion.bin';
+        'https://github.com/barberop/sime-domotica/raw/main/${deviceType}_IOT/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';
     printLog(url);
     try {
       String data = '${command(deviceType)}[2]($url)';
@@ -689,54 +919,68 @@ class OtaTabState extends State<OtaTab> {
 
   void subToProgress() async {
     printLog('Entre aquis mismito');
-    if (!alreadySubOta) {
-      await myDevice.otaUuid.setNotifyValue(true);
-      alreadySubOta = true;
-    }
-    final otaSub = myDevice.otaUuid.onValueReceived.listen((event) {
+
+    printLog('Hice cosas');
+    await myDevice.otaUuid.setNotifyValue(true);
+    printLog('Notif activated');
+
+    final otaSub = myDevice.otaUuid.onValueReceived.listen((List<int> event) {
       try {
         var fun = utf8.decode(event);
         fun = fun.replaceAll(RegExp(r'[^\x20-\x7E]'), '');
         printLog(fun);
         var parts = fun.split(':');
-        if (parts[0] == '02_IOT_OTAPR' || parts[0] == '07_IOT_OTAPR') {
+        if (parts[0] == 'OTAPR') {
           printLog('Se recibio');
           setState(() {
             progressValue = int.parse(parts[1]) / 100;
           });
           printLog('Progreso: ${parts[1]}');
+        } else if (fun.contains('OTA:HTTP_CODE')) {
+          RegExp exp = RegExp(r'\(([^)]+)\)');
+          final Iterable<RegExpMatch> matches = exp.allMatches(fun);
+
+          for (final RegExpMatch match in matches) {
+            String valorEntreParentesis = match.group(1)!;
+            printLog('HTTP CODE recibido: $valorEntreParentesis');
+            if (valorEntreParentesis == '200') {
+              showToast('Iniciando actualización');
+            } else {
+              showToast('HTTP CODE recibido: $valorEntreParentesis');
+            }
+          }
         } else {
           switch (fun) {
-            case '02_IOT_OTA:START' || '07_IOT_OTA:START':
+            case 'OTA:START':
               printLog('Header se recibio correctamente');
               break;
-            case '02_IOT_OTA:SUCCESS' || '07_IOT_OTA:SUCCESS':
+            case 'OTA:SUCCESS':
               printLog('Estreptococo');
               navigatorKey.currentState?.pushReplacementNamed('/menu');
               showToast("OTA completada exitosamente");
               break;
-            case '02_IOT_OTA:FAIL' || '07_IOT_OTA:FAIL':
+            case 'OTA:FAIL':
               showToast("Fallo al enviar OTA");
               break;
-            case '02_IOT_OTA:OVERSIZE' || '07_IOT_OTA:OVERSIZE':
+            case 'OTA:OVERSIZE':
               showToast("El archivo es mayor al espacio reservado");
               break;
-            case '02_IOT_OTA:WIFI_LOST' || '07_IOT_OTA:WIFI_LOST':
+            case 'OTA:WIFI_LOST':
               showToast("Se perdió la conexión wifi");
               break;
-            case '02_IOT_OTA:HTTP_LOST' || '07_IOT_OTA:HTTP_LOST':
+            case 'OTA:HTTP_LOST':
               showToast("Se perdió la conexión HTTP durante la actualización");
               break;
-            case '02_IOT_OTA:STREAM_LOST' || '07_IOT_OTA:STREAM_LOST':
+            case 'OTA:STREAM_LOST':
               showToast("Excepción de stream durante la actualización");
               break;
-            case '02_IOT_OTA:NO_WIFI' || '07_IOT_OTA:NO_WIFI':
+            case 'OTA:NO_WIFI':
               showToast("Dispositivo no conectado a una red Wifi");
               break;
-            case '02_IOT_OTA_HTTP:FAIL' || '07_IOT_OTA_HTTP:FAIL':
+            case 'OTA:HTTP_FAIL':
               showToast("No se pudo iniciar una peticion HTTP");
               break;
-            case '02_IOT_OTA:NO_ROLLBACK' || '07_IOT_OTA:NO_ROLLBACK':
+            case 'OTA:NO_ROLLBACK':
               showToast("Imposible realizar un rollback");
               break;
             default:
@@ -752,9 +996,70 @@ class OtaTabState extends State<OtaTab> {
     myDevice.device.cancelWhenDisconnected(otaSub);
   }
 
+  void sendOTABLE() async {
+    showToast("Enviando OTA...");
+
+    String url =
+        'https://github.com/barberop/sime-domotica/raw/main/${command(deviceType)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';
+
+    printLog(url);
+
+    if (sizeWasSend == false) {
+      try {
+        String dir = (await getApplicationDocumentsDirectory()).path;
+        File file = File('$dir/firmware.bin');
+
+        if (await file.exists()) {
+          await file.delete();
+        }
+
+        var req = await http.get(Uri.parse(url));
+        var bytes = req.body.codeUnits;
+
+        await file.writeAsBytes(bytes);
+
+        var firmware = await file.readAsBytes();
+        firmwareGlobal = firmware;
+
+        String data = '${command(deviceType)}[3](${bytes.length})';
+        printLog(data);
+        await myDevice.toolsUuid.write(data.codeUnits);
+        sizeWasSend = true;
+
+        sendchunk();
+      } catch (e, stackTrace) {
+        printLog('Error al enviar la OTA $e $stackTrace');
+        // handleManualError(e, stackTrace);
+        showToast("Error al enviar OTA");
+      }
+    }
+  }
+
+  void sendchunk() async {
+    try {
+      int mtuSize = 255;
+      await writeChunk(firmwareGlobal, mtuSize);
+    } catch (e, stackTrace) {
+      printLog('El error es: $e $stackTrace');
+      showToast('Error al enviar chunk');
+      // handleManualError(e, stackTrace);
+    }
+  }
+
+  Future<void> writeChunk(List<int> value, int mtu, {int timeout = 15}) async {
+    int chunk = mtu - 3;
+    for (int i = 0; i < value.length; i += chunk) {
+      printLog('Mande chunk');
+      List<int> subvalue = value.sublist(i, min(i + chunk, value.length));
+      await myDevice.infoUuid.write(subvalue, withoutResponse: false);
+    }
+    printLog('Acabe');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xff190019),
       appBar: AppBar(
         title: const Align(
@@ -799,6 +1104,18 @@ class OtaTabState extends State<OtaTab> {
             ),
             const SizedBox(height: 40),
             SizedBox(
+                width: 300,
+                child: TextField(
+                  keyboardType: TextInputType.text,
+                  style: const TextStyle(color: Color(0xfffbe4d8)),
+                  controller: otaSVController,
+                  decoration: const InputDecoration(
+                    labelText: 'Introducir última versión de Software',
+                    labelStyle: TextStyle(color: Color(0xfffbe4d8)),
+                  ),
+                )),
+            const SizedBox(height: 20),
+            SizedBox(
               height: 70,
               width: 300,
               child: ElevatedButton(
@@ -821,6 +1138,38 @@ class OtaTabState extends State<OtaTab> {
                       SizedBox(height: 10),
                       Text(
                         'Actualizar equipo',
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 10),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              height: 70,
+              width: 300,
+              child: ElevatedButton(
+                onPressed: () => sendOTABLE(),
+                style: ButtonStyle(
+                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18.0),
+                    ),
+                  ),
+                ),
+                child: const Center(
+                  child: Column(
+                    children: [
+                      SizedBox(height: 10),
+                      Icon(
+                        Icons.bluetooth,
+                        size: 16,
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        'Actualizar equipo (BLE)',
                         textAlign: TextAlign.center,
                       ),
                       SizedBox(height: 10),

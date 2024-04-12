@@ -20,9 +20,8 @@ class MenuPage extends StatefulWidget {
 }
 
 class MenuPageState extends State<MenuPage> {
-
   @override
-  void initState(){
+  void initState() {
     super.initState();
     startBluetoothMonitoring();
   }
@@ -38,7 +37,7 @@ class MenuPageState extends State<MenuPage> {
         useMaterial3: true,
       ),
       home: DefaultTabController(
-        length: 4,
+        length: 5,
         child: Scaffold(
           backgroundColor: const Color(0xff190019),
           appBar: AppBar(
@@ -55,6 +54,9 @@ class MenuPageState extends State<MenuPage> {
                 ),
                 Tab(
                   icon: Icon(Icons.assignment),
+                ),
+                Tab(
+                  icon: Icon(Icons.webhook_outlined),
                 ),
                 Tab(
                   icon: Icon(Icons.thermostat),
@@ -149,9 +151,9 @@ class ScanTabState extends State<ScanTab> {
       printLog('Teoricamente estoy conectado');
 
       MyDevice myDevice = MyDevice();
-
       device.connectionState.listen((BluetoothConnectionState state) {
         printLog('Estado de conexión: $state');
+
         switch (state) {
           case BluetoothConnectionState.disconnected:
             {
@@ -226,7 +228,7 @@ class ScanTabState extends State<ScanTab> {
           title: TextField(
             focusNode: searchFocusNode,
             controller: searchController,
-            keyboardType: TextInputType.number,
+            keyboardType: TextInputType.text,
             style: const TextStyle(color: Color(0xfffbe4d8)),
             decoration: const InputDecoration(
               icon: Icon(Icons.search),
@@ -409,6 +411,24 @@ class ControlTabState extends State<ControlTab> {
       ),
     );
   }
+}
+
+//TOOLSAWS TAB//Technical Service
+
+class ToolsAWS extends StatefulWidget {
+  const ToolsAWS({super.key});
+
+  @override
+  ToolsAWSState createState() => ToolsAWSState();
+}
+
+class ToolsAWSState extends State<ToolsAWS>{
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    throw UnimplementedError();
+  }
+
 }
 
 //REGBANK TAB //Regbank associates
@@ -1360,7 +1380,7 @@ class LoadState extends State<LoadingPage> {
           navigatorKey.currentState?.pushReplacementNamed('/calefactor');
         } else if (deviceType == '015773') {
           navigatorKey.currentState?.pushReplacementNamed('/detector');
-        }else if(deviceType == '020010'){
+        } else if (deviceType == '020010') {
           navigatorKey.currentState?.pushReplacementNamed('/io');
         }
       } else {
@@ -1402,9 +1422,9 @@ class LoadState extends State<LoadingPage> {
         printLog('Valores debug: $debugValues');
         printLog('Valores trabajo: $workValues');
         printLog('Valores work: $workValues');
-      }else if(deviceType == '020010'){
+      } else if (deviceType == '020010') {
         ioValues = await myDevice.ioUuid.read();
-        printLog('Valores IO: $ioValues');
+        printLog('Valores IO: $ioValues // ${utf8.decode(ioValues)}');
       }
 
       return Future.value(true);

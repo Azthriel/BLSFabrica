@@ -66,7 +66,7 @@ const bool xDebugMode = !xProfileMode && !xReleaseMode;
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
-String appVersionNumber = '24032800';
+String appVersionNumber = '24041202';
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
@@ -439,6 +439,10 @@ class MyDevice {
               c.uuid ==
               Guid(
                   '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //WorkingTemp:WorkingStatus:EnergyTimer:HeaterOn:NightMode
+          otaUuid = espService.characteristics.firstWhere((c) =>
+              c.uuid ==
+              Guid(
+                  'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
           break;
         case '027000':
           BluetoothService espService = services.firstWhere(
@@ -448,6 +452,10 @@ class MyDevice {
               c.uuid ==
               Guid(
                   '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //WorkingTemp:WorkingStatus:EnergyTimer:HeaterOn:NightMode
+          otaUuid = espService.characteristics.firstWhere((c) =>
+              c.uuid ==
+              Guid(
+                  'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
           break;
         case '041220':
           BluetoothService espService = services.firstWhere(
@@ -457,6 +465,10 @@ class MyDevice {
               c.uuid ==
               Guid(
                   '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //WorkingTemp:WorkingStatus:EnergyTimer:HeaterOn:NightMode
+          otaUuid = espService.characteristics.firstWhere((c) =>
+              c.uuid ==
+              Guid(
+                  'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
           break;
         case '015773':
           factoryMode = partes[2].contains('_F');
@@ -470,6 +482,12 @@ class MyDevice {
                 (c) => c.uuid == Guid('961d1cdd-028f-47d0-aa2a-e0095e387f55'));
             debugUuid = service.characteristics.firstWhere(
                 (c) => c.uuid == Guid('838335a1-ff5a-4344-bfdf-38bf6730de26'));
+            BluetoothService otaService = services.firstWhere(
+                (s) => s.uuid == Guid('33e3a05a-c397-4bed-81b0-30deb11495c7'));
+            otaUuid = otaService.characteristics.firstWhere((c) =>
+                c.uuid ==
+                Guid(
+                    'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
           }
           workUuid = service.characteristics.firstWhere(
               (c) => c.uuid == Guid('6869fe94-c4a2-422a-ac41-b2a7a82803e9'));
@@ -482,6 +500,11 @@ class MyDevice {
               (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
           ioUuid = service.characteristics.firstWhere(
               (c) => c.uuid == Guid('03b1c5d9-534a-4980-aed3-f59615205216'));
+          otaUuid = service.characteristics.firstWhere((c) =>
+              c.uuid ==
+              Guid(
+                  'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
+
           break;
         case '030710':
           break;
@@ -489,7 +512,7 @@ class MyDevice {
 
       return Future.value(true);
     } catch (e, stackTrace) {
-      printLog('Lcdtmbe $e $stackTrace');
+      printLog(' $e $stackTrace');
 
       return Future.value(false);
     }

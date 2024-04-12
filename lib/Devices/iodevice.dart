@@ -1,8 +1,16 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:biocaldensmartlifefabrica/master.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:http/http.dart' as http;
+
+List<String> tipo = [];
+List<bool> estado = [];
 
 class IODevicesTab extends StatefulWidget {
   const IODevicesTab({super.key});
@@ -416,9 +424,6 @@ class SetTab extends StatefulWidget {
 }
 
 class SetTabState extends State<SetTab> {
-  List<String> tipo = [];
-  List<bool> estado = [];
-
   @override
   void initState() {
     super.initState();
@@ -427,6 +432,7 @@ class SetTabState extends State<SetTab> {
   }
 
   void processValues(List<int> values) {
+    ioValues = values;
     var parts = utf8.decode(values).split('/');
     tipo.clear();
     estado.clear();
@@ -732,6 +738,8 @@ class OtaTabState extends State<OtaTab> {
   var dataToShow = 0;
   var progressValue = 0.0;
   TextEditingController otaSVController = TextEditingController();
+  late Uint8List firmwareGlobal;
+  bool sizeWasSend = false;
 
   @override
   void initState() {
@@ -745,7 +753,7 @@ class OtaTabState extends State<OtaTab> {
     //https://github.com/barberop/sime-domotica/raw/main/027000_IOT/OTA_FW/240208A%23240223A.bin
     printLog(url);
     try {
-      String data = '${command(deviceType)}[4]($url)';
+      String data = '${command(deviceType)}[2]($url)';
       await myDevice.toolsUuid.write(data.codeUnits);
       printLog('Si mandé ota');
     } catch (e, stackTrace) {
@@ -767,44 +775,52 @@ class OtaTabState extends State<OtaTab> {
         fun = fun.replaceAll(RegExp(r'[^\x20-\x7E]'), '');
         printLog(fun);
         var parts = fun.split(':');
-        if (parts[0] == '02_IOT_OTAPR' || parts[0] == '07_IOT_OTAPR') {
+        if (parts[0] == 'OTAPR') {
           printLog('Se recibio');
           setState(() {
             progressValue = int.parse(parts[1]) / 100;
           });
           printLog('Progreso: ${parts[1]}');
+        } else if (fun.contains('OTA:HTTP_CODE')) {
+          RegExp exp = RegExp(r'\(([^)]+)\)');
+          final Iterable<RegExpMatch> matches = exp.allMatches(fun);
+
+          for (final RegExpMatch match in matches) {
+            String valorEntreParentesis = match.group(1)!;
+            showToast('HTTP CODE recibido: $valorEntreParentesis');
+          }
         } else {
           switch (fun) {
-            case '02_IOT_OTA:START' || '07_IOT_OTA:START':
+            case 'OTA:START':
               printLog('Header se recibio correctamente');
               break;
-            case '02_IOT_OTA:SUCCESS' || '07_IOT_OTA:SUCCESS':
+            case 'OTA:SUCCESS':
               printLog('Estreptococo');
               navigatorKey.currentState?.pushReplacementNamed('/menu');
               showToast("OTA completada exitosamente");
               break;
-            case '02_IOT_OTA:FAIL' || '07_IOT_OTA:FAIL':
+            case 'OTA:FAIL':
               showToast("Fallo al enviar OTA");
               break;
-            case '02_IOT_OTA:OVERSIZE' || '07_IOT_OTA:OVERSIZE':
+            case 'OTA:OVERSIZE':
               showToast("El archivo es mayor al espacio reservado");
               break;
-            case '02_IOT_OTA:WIFI_LOST' || '07_IOT_OTA:WIFI_LOST':
+            case 'OTA:WIFI_LOST':
               showToast("Se perdió la conexión wifi");
               break;
-            case '02_IOT_OTA:HTTP_LOST' || '07_IOT_OTA:HTTP_LOST':
+            case 'OTA:HTTP_LOST':
               showToast("Se perdió la conexión HTTP durante la actualización");
               break;
-            case '02_IOT_OTA:STREAM_LOST' || '07_IOT_OTA:STREAM_LOST':
+            case 'OTA:STREAM_LOST':
               showToast("Excepción de stream durante la actualización");
               break;
-            case '02_IOT_OTA:NO_WIFI' || '07_IOT_OTA:NO_WIFI':
+            case 'OTA:NO_WIFI':
               showToast("Dispositivo no conectado a una red Wifi");
               break;
-            case '02_IOT_OTA_HTTP:FAIL' || '07_IOT_OTA_HTTP:FAIL':
+            case 'OTA:HTTP_FAIL':
               showToast("No se pudo iniciar una peticion HTTP");
               break;
-            case '02_IOT_OTA:NO_ROLLBACK' || '07_IOT_OTA:NO_ROLLBACK':
+            case 'OTA:NO_ROLLBACK':
               showToast("Imposible realizar un rollback");
               break;
             default:
@@ -818,6 +834,65 @@ class OtaTabState extends State<OtaTab> {
       }
     });
     myDevice.device.cancelWhenDisconnected(otaSub);
+  }
+
+  void sendOTABLE() async {
+    showToast("Enviando OTA...");
+
+    String url =
+        'https://github.com/barberop/sime-domotica/raw/main/${command(deviceType)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';
+
+    printLog(url);
+
+    if (sizeWasSend == false) {
+      try {
+        String dir = (await getApplicationDocumentsDirectory()).path;
+        File file = File('$dir/firmware.bin');
+
+        if (await file.exists()) {
+          await file.delete();
+        }
+
+        var req = await http.get(Uri.parse(url));
+        var bytes = req.body.codeUnits;
+
+        await file.writeAsBytes(bytes);
+
+        var firmware = await file.readAsBytes();
+        firmwareGlobal = firmware;
+
+        String data = '${command(deviceType)}[3](${bytes.length})';
+        printLog(data);
+        await myDevice.toolsUuid.write(data.codeUnits);
+        sizeWasSend = true;
+
+        sendchunk();
+      } catch (e, stackTrace) {
+        printLog('Error al enviar la OTA $e $stackTrace');
+        // handleManualError(e, stackTrace);
+        showToast("Error al enviar OTA");
+      }
+    }
+  }
+
+  void sendchunk() async {
+    try {
+      int mtuSize = 255;
+      await writeChunk(firmwareGlobal, mtuSize);
+    } catch (e, stackTrace) {
+      printLog('El error es: $e $stackTrace');
+      showToast('Error al enviar chunk');
+      // handleManualError(e, stackTrace);
+    }
+  }
+
+  Future<void> writeChunk(List<int> value, int mtu, {int timeout = 15}) async {
+    int chunk = mtu - 3;
+    for (int i = 0; i < value.length; i += chunk) {
+      printLog('Mande chunk');
+      List<int> subvalue = value.sublist(i, min(i + chunk, value.length));
+      await myDevice.infoUuid.write(subvalue, withoutResponse: false);
+    }
   }
 
   @override
@@ -901,6 +976,38 @@ class OtaTabState extends State<OtaTab> {
                       SizedBox(height: 10),
                       Text(
                         'Actualizar equipo',
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 10),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 40),
+            SizedBox(
+              height: 70,
+              width: 300,
+              child: ElevatedButton(
+                onPressed: () => sendOTABLE(),
+                style: ButtonStyle(
+                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18.0),
+                    ),
+                  ),
+                ),
+                child: const Center(
+                  child: Column(
+                    children: [
+                      SizedBox(height: 10),
+                      Icon(
+                        Icons.bluetooth,
+                        size: 16,
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        'Actualizar equipo (BLE)',
                         textAlign: TextAlign.center,
                       ),
                       SizedBox(height: 10),
