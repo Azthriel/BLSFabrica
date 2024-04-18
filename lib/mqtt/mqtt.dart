@@ -4,6 +4,7 @@ import 'package:biocaldensmartlifefabrica/master.dart';
 import 'package:biocaldensmartlifefabrica/mqtt/mqtt_certificates.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
+import 'package:provider/provider.dart';
 
 MqttServerClient? mqttAWSFlutterClient;
 
@@ -109,7 +110,11 @@ void listenToTopics() {
     try {
       final Map<String, dynamic> messageMap = json.decode(messageString);
 
-
+      deviceResponseMqtt = messageMap['esp_res'];
+      GlobalDataNotifier notifier = Provider.of<GlobalDataNotifier>(
+          navigatorKey.currentContext!,
+          listen: false);
+      notifier.updateData(deviceResponseMqtt);
 
       printLog('Received message: $messageMap from topic: $topic');
     } catch (e) {

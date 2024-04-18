@@ -12,6 +12,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,7 +32,12 @@ Future<void> main() async {
       printLog('Failed to get external storage directory');
     }
   };
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => GlobalDataNotifier(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -65,8 +71,8 @@ class MyApp extends StatelessWidget {
         '/menu': (context) => const MenuPage(),
         '/loading': (context) => const LoadingPage(),
         '/detector': (context) => const DetectorTabs(),
-        '/calefactor':(context) => const CalefactoresTab(),
-        '/io':(context) => const IODevicesTab(),
+        '/calefactor': (context) => const CalefactoresTab(),
+        '/io': (context) => const IODevicesTab(),
       },
     );
   }

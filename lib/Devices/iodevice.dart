@@ -6,7 +6,6 @@ import 'dart:typed_data';
 import 'package:biocaldensmartlifefabrica/master.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 
 List<String> tipo = [];
@@ -159,109 +158,7 @@ class IODevicesTabState extends State<IODevicesTab> {
                       semanticLabel: 'Icono de wifi',
                     ),
                     onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: Row(children: [
-                              const Text.rich(TextSpan(
-                                  text: 'Estado de conexión: ',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 14,
-                                  ))),
-                              Text.rich(TextSpan(
-                                  text: textState,
-                                  style: TextStyle(
-                                      color: statusColor,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold)))
-                            ]),
-                            content: SingleChildScrollView(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text.rich(TextSpan(
-                                      text: 'Error: $errorMessage',
-                                      style: const TextStyle(
-                                        fontSize: 10,
-                                      ))),
-                                  const SizedBox(height: 10),
-                                  Text.rich(TextSpan(
-                                      text: 'Sintax: $errorSintax',
-                                      style: const TextStyle(
-                                        fontSize: 10,
-                                      ))),
-                                  const SizedBox(height: 10),
-                                  Row(children: [
-                                    const Text.rich(TextSpan(
-                                        text: 'Red actual: ',
-                                        style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold))),
-                                    Text.rich(TextSpan(
-                                        text: nameOfWifi,
-                                        style: const TextStyle(fontSize: 20))),
-                                  ]),
-                                  const SizedBox(height: 10),
-                                  const Text.rich(TextSpan(
-                                      text: 'Ingrese los datos de WiFi',
-                                      style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold))),
-                                  IconButton(
-                                    icon: const Icon(Icons.qr_code),
-                                    iconSize: 50,
-                                    onPressed: () async {
-                                      PermissionStatus permissionStatusC =
-                                          await Permission.camera.request();
-                                      if (!permissionStatusC.isGranted) {
-                                        await Permission.camera.request();
-                                      }
-                                      permissionStatusC =
-                                          await Permission.camera.status;
-                                      if (permissionStatusC.isGranted) {
-                                        openQRScanner(
-                                            navigatorKey.currentContext!);
-                                      }
-                                    },
-                                  ),
-                                  TextField(
-                                    decoration: const InputDecoration(
-                                        hintText: 'Nombre de la red'),
-                                    onChanged: (value) {
-                                      wifiName = value;
-                                    },
-                                  ),
-                                  TextField(
-                                    decoration: const InputDecoration(
-                                        hintText: 'Contraseña'),
-                                    obscureText: true,
-                                    onChanged: (value) {
-                                      wifiPassword = value;
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                            actions: [
-                              TextButton(
-                                child: const Text('Cancelar'),
-                                onPressed: () {
-                                  navigatorKey.currentState?.pop();
-                                },
-                              ),
-                              TextButton(
-                                child: const Text('Aceptar'),
-                                onPressed: () {
-                                  sendWifitoBle();
-                                  navigatorKey.currentState?.pop();
-                                },
-                              ),
-                            ],
-                          );
-                        },
-                      );
+                      wifiText(context);
                     },
                   ),
                 ],
@@ -350,7 +247,11 @@ class InfoTabState extends State<InfoTab> {
                   )),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => sendDataToDevice(),
+                onPressed: () {
+                  registerActivity(command(deviceType), textController.text,
+                      'Se coloco el número de serie');
+                  sendDataToDevice();
+                },
                 style: ButtonStyle(
                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                     RoundedRectangleBorder(
@@ -396,8 +297,12 @@ class InfoTabState extends State<InfoTab> {
               ),
               const SizedBox(height: 50),
               ElevatedButton(
-                onPressed: () => myDevice.toolsUuid
-                    .write('${command(deviceType)}[0](1)'.codeUnits),
+                onPressed: () {
+                  registerActivity(command(deviceType), serialNumber,
+                      'Se borró la NVS de este equipo...');
+                  myDevice.toolsUuid
+                      .write('${command(deviceType)}[0](1)'.codeUnits);
+                },
                 style: ButtonStyle(
                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                     RoundedRectangleBorder(
@@ -693,6 +598,10 @@ class CredsTabState extends State<CredsTab> {
                         privateKey != null &&
                         deviceCert != null) {
                       printLog('Estan todos anashe');
+                      registerActivity(
+                          command(deviceType),
+                          extractSerialNumber(deviceName),
+                          'Se asigno credenciales de AWS al equipo');
                       writeLarge(amazonCA!, 0, deviceType);
                       writeLarge(deviceCert!, 1, deviceType);
                       writeLarge(privateKey!, 2, deviceType);
@@ -957,7 +866,13 @@ class OtaTabState extends State<OtaTab> {
               height: 70,
               width: 300,
               child: ElevatedButton(
-                onPressed: () => sendOTAWifi(),
+                onPressed: () {
+                  registerActivity(
+                      command(deviceType),
+                      extractSerialNumber(deviceName),
+                      'Se envio OTA Wifi a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
+                  sendOTAWifi();
+                },
                 style: ButtonStyle(
                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                     RoundedRectangleBorder(
@@ -989,7 +904,13 @@ class OtaTabState extends State<OtaTab> {
               height: 70,
               width: 300,
               child: ElevatedButton(
-                onPressed: () => sendOTABLE(),
+                onPressed: () {
+                  registerActivity(
+                      command(deviceType),
+                      extractSerialNumber(deviceName),
+                      'Se envio OTA ble a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
+                  sendOTABLE();
+                },
                 style: ButtonStyle(
                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                     RoundedRectangleBorder(

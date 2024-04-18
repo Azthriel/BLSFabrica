@@ -7,7 +7,6 @@ import 'package:biocaldensmartlifefabrica/master.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
-import 'package:permission_handler/permission_handler.dart';
 
 class DetectorTabs extends StatefulWidget {
   const DetectorTabs({super.key});
@@ -134,6 +133,7 @@ class DetectorTabsState extends State<DetectorTabs> {
         home: DefaultTabController(
           length: factoryMode ? 7 : 4,
           child: Scaffold(
+            resizeToAvoidBottomInset: false,
             appBar: AppBar(
                 backgroundColor: const Color(0xff522b5b),
                 foregroundColor: const Color(0xfffbe4d8),
@@ -162,112 +162,7 @@ class DetectorTabsState extends State<DetectorTabs> {
                       semanticLabel: 'Icono de wifi',
                     ),
                     onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: Row(children: [
-                              const Text.rich(TextSpan(
-                                  text: 'Estado de conexión:',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 14,
-                                  ))),
-                              Text.rich(TextSpan(
-                                  text: textState,
-                                  style: TextStyle(
-                                      color: statusColor,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold)))
-                            ]),
-                            content: SingleChildScrollView(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text.rich(TextSpan(
-                                      text: 'Error: $errorMessage',
-                                      style: const TextStyle(
-                                        fontSize: 10,
-                                      ))),
-                                  const SizedBox(height: 10),
-                                  Text.rich(TextSpan(
-                                      text: 'Sintax: $errorSintax',
-                                      style: const TextStyle(
-                                        fontSize: 10,
-                                      ))),
-                                  const SizedBox(height: 10),
-                                  Row(children: [
-                                    const Text.rich(TextSpan(
-                                        text: 'Red actual: ',
-                                        style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold))),
-                                    Text.rich(TextSpan(
-                                        text: nameOfWifi,
-                                        style: const TextStyle(
-                                            color: Color(0xFFdfb6b2),
-                                            fontSize: 20))),
-                                  ]),
-                                  const SizedBox(height: 10),
-                                  const Text.rich(TextSpan(
-                                      text: 'Ingrese los datos de WiFi',
-                                      style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold))),
-                                  IconButton(
-                                    icon: const Icon(Icons.qr_code,
-                                        color: Color(0xFFdfb6b2)),
-                                    iconSize: 50,
-                                    onPressed: () async {
-                                      PermissionStatus permissionStatusC =
-                                          await Permission.camera.request();
-                                      if (!permissionStatusC.isGranted) {
-                                        await Permission.camera.request();
-                                      }
-                                      permissionStatusC =
-                                          await Permission.camera.status;
-                                      if (permissionStatusC.isGranted) {
-                                        openQRScanner(
-                                            navigatorKey.currentContext!);
-                                      }
-                                    },
-                                  ),
-                                  TextField(
-                                    decoration: const InputDecoration(
-                                        hintText: 'Nombre de la red'),
-                                    onChanged: (value) {
-                                      wifiName = value;
-                                    },
-                                  ),
-                                  TextField(
-                                    decoration: const InputDecoration(
-                                        hintText: 'Contraseña'),
-                                    obscureText: true,
-                                    onChanged: (value) {
-                                      wifiPassword = value;
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                            actions: [
-                              TextButton(
-                                child: const Text('Cancelar'),
-                                onPressed: () {
-                                  navigatorKey.currentState?.pop();
-                                },
-                              ),
-                              TextButton(
-                                child: const Text('Aceptar'),
-                                onPressed: () {
-                                  sendWifitoBle();
-                                  navigatorKey.currentState?.pop();
-                                },
-                              ),
-                            ],
-                          );
-                        },
-                      );
+                      wifiText(context);
                     },
                   ),
                 ],
@@ -286,6 +181,10 @@ class DetectorTabsState extends State<DetectorTabs> {
                                     onPressed: () {
                                       var data = '015773_IOT[0](1)';
                                       try {
+                                        registerActivity(
+                                            command(deviceType),
+                                            extractSerialNumber(deviceName),
+                                            'Se borró la NVS de este equipo...');
                                         myDevice.toolsUuid.write(data.codeUnits,
                                             withoutResponse: false);
                                         printLog('a');
@@ -401,7 +300,11 @@ class CharState extends State<CharPage> {
                   )),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => sendDataToDevice(),
+                onPressed: () {
+                  registerActivity(command(deviceType), textController.text,
+                      'Se coloco el número de serie');
+                  sendDataToDevice();
+                },
                 style: ButtonStyle(
                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                     RoundedRectangleBorder(
@@ -1508,6 +1411,10 @@ class CredsTabState extends State<CredsTab> {
                         privateKey != null &&
                         deviceCert != null) {
                       printLog('Estan todos anashe');
+                      registerActivity(
+                          command(deviceType),
+                          extractSerialNumber(deviceName),
+                          'Se asigno credenciales de AWS al equipo');
                       writeLarge(amazonCA!, 0, deviceType);
                       writeLarge(deviceCert!, 1, deviceType);
                       writeLarge(privateKey!, 2, deviceType);
@@ -1700,7 +1607,7 @@ class OTAState extends State<OTAPage> {
         } else {
           switch (fun) {
             case 'OTA:START':
-              printLog('Header se recibio correctamente');
+              showToast('Iniciando actualización');
               break;
             case 'OTA:SUCCESS':
               printLog('Estreptococo');
@@ -1755,6 +1662,7 @@ class OTAState extends State<OTAPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xff190019),
       body: Center(
         child: Column(
@@ -1898,7 +1806,13 @@ class OTAState extends State<OTAPage> {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => sendOTAWifi(1),
+                      onPressed: () {
+                        registerActivity(
+                            command(deviceType),
+                            extractSerialNumber(deviceName),
+                            'Se envio OTA Wifi a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
+                        sendOTAWifi(1);
+                      },
                       style: ButtonStyle(
                         shape:
                             MaterialStateProperty.all<RoundedRectangleBorder>(
@@ -1933,7 +1847,13 @@ class OTAState extends State<OTAPage> {
                   const SizedBox(width: 20),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => sendOTAWifi(0),
+                      onPressed: () {
+                        registerActivity(
+                            command(deviceType),
+                            extractSerialNumber(deviceName),
+                            'Se envio OTA Wifi a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
+                        sendOTAWifi(0);
+                      },
                       style: ButtonStyle(
                         shape:
                             MaterialStateProperty.all<RoundedRectangleBorder>(
@@ -1975,7 +1895,13 @@ class OTAState extends State<OTAPage> {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => sendOTABLE(1),
+                      onPressed: () {
+                        registerActivity(
+                            command(deviceType),
+                            extractSerialNumber(deviceName),
+                            'Se envio OTA ble a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
+                        sendOTABLE(1);
+                      },
                       style: ButtonStyle(
                         shape:
                             MaterialStateProperty.all<RoundedRectangleBorder>(
@@ -2011,7 +1937,13 @@ class OTAState extends State<OTAPage> {
                   const SizedBox(width: 20),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => sendOTABLE(0),
+                      onPressed: () {
+                        registerActivity(
+                            command(deviceType),
+                            extractSerialNumber(deviceName),
+                            'Se envio OTA ble a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
+                        sendOTABLE(0);
+                      },
                       style: ButtonStyle(
                         shape:
                             MaterialStateProperty.all<RoundedRectangleBorder>(
@@ -2051,6 +1983,10 @@ class OTAState extends State<OTAPage> {
               width: 300,
               child: ElevatedButton(
                 onPressed: () {
+                  registerActivity(
+                      command(deviceType),
+                      extractSerialNumber(deviceName),
+                      'Se envio OTA PIC a el equipo.');
                   otaPIC = true;
                   sendOTAWifi(2);
                 },

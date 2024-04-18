@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:biocaldensmartlifefabrica/master.dart';
+import 'package:biocaldensmartlifefabrica/mqtt/mqtt.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -11,6 +12,7 @@ import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:share/share.dart';
 
 class MenuPage extends StatefulWidget {
@@ -24,6 +26,7 @@ class MenuPageState extends State<MenuPage> {
   void initState() {
     super.initState();
     startBluetoothMonitoring();
+    setupMqtt();
   }
 
   //!Visual
@@ -69,6 +72,7 @@ class MenuPageState extends State<MenuPage> {
             children: [
               ScanTab(),
               ControlTab(),
+              ToolsAWS(),
               RegbankTab(),
               Ota2Tab(),
             ],
@@ -311,7 +315,9 @@ class ControlTab extends StatefulWidget {
 class ControlTabState extends State<ControlTab> {
   final TextEditingController snController = TextEditingController();
   final TextEditingController comController = TextEditingController();
+  final TextEditingController pcController = TextEditingController();
   String serialNumber = '';
+  String productCode = '';
   bool stateSell = false;
   bool isRegister = false;
 
@@ -324,8 +330,9 @@ class ControlTabState extends State<ControlTab> {
 
     String status = stateSell ? 'Si' : 'No';
     const String url =
-        'https://script.google.com/macros/s/AKfycbw3QKsCGNn5kMxE-5y7ilnI9DGOwp8W02J169CbZG44SnOqCpTsPZGJzx-rp6sFQz7J/exec';
+        'https://script.google.com/macros/s/AKfycbyJw-peLVNGfSwb9vi9YWTbYysBR4oc2_Bz8cReB1oMOLrRrE4kK9lIb0hhRzriAHWs/exec';
     final Uri uri = Uri.parse(url).replace(queryParameters: {
+      'productCode': productCode,
       'serialNumber': serialNumber,
       'status': status,
       'legajo': legajoConectado,
@@ -352,6 +359,22 @@ class ControlTabState extends State<ControlTab> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            const SizedBox(height: 20),
+            SizedBox(
+                width: 300,
+                child: TextField(
+                  style: const TextStyle(color: Color(0xfffbe4d8)),
+                  controller: pcController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Ingrese el código de producto',
+                    labelStyle: TextStyle(color: Color(0xfffbe4d8)),
+                    hintStyle: TextStyle(color: Color(0xfffbe4d8)),
+                  ),
+                  onChanged: (value) {
+                    productCode = value;
+                  },
+                )),
             const SizedBox(height: 20),
             SizedBox(
                 width: 300,
@@ -400,7 +423,12 @@ class ControlTabState extends State<ControlTab> {
                 )),
             const SizedBox(height: 20),
             ElevatedButton(
-                onPressed: () => updateGoogleSheet(),
+                onPressed: () {
+                  String accion =
+                      'Se marco el equipo como ${stateSell ? 'listo para la venta' : 'no listo para la venta'}';
+                  registerActivity(productCode, serialNumber, accion);
+                  updateGoogleSheet();
+                },
                 child: const Text('Subir')),
             const SizedBox(height: 10),
             if (isRegister) ...{
@@ -413,7 +441,7 @@ class ControlTabState extends State<ControlTab> {
   }
 }
 
-//TOOLSAWS TAB//Technical Service
+//TOOLSAWS TAB//Technical Service (AWS Commands tools)
 
 class ToolsAWS extends StatefulWidget {
   const ToolsAWS({super.key});
@@ -422,13 +450,221 @@ class ToolsAWS extends StatefulWidget {
   ToolsAWSState createState() => ToolsAWSState();
 }
 
-class ToolsAWSState extends State<ToolsAWS>{
-  @override
-  Widget build(BuildContext context) {
-    // TODO: implement build
-    throw UnimplementedError();
+class ToolsAWSState extends State<ToolsAWS> {
+  final TextEditingController productCodeController = TextEditingController();
+  final TextEditingController serialNumberController = TextEditingController();
+  final TextEditingController cmdController = TextEditingController();
+  final TextEditingController contentController = TextEditingController();
+
+  String hintAWS(String cmd) {
+    switch (cmd) {
+      case '0':
+        return '0 para borrar nvs, 1 para mantener';
+      case '2':
+        return 'HardVer#SoftVer';
+      case '4':
+        return 'Nuevo SN';
+      case '5':
+        return 'Nuevo owner (NA para borrar)';
+      case '6':
+        return 'key#linea';
+      case '':
+        return 'Aún no se agrega comando';
+      default:
+        return 'Este comando no existe...';
+    }
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        resizeToAvoidBottomInset: false,
+        backgroundColor: const Color(0xff190019),
+        body: Consumer<GlobalDataNotifier>(
+          builder: (context, notifier, child) {
+            late List<String> parts;
+            String textToShow = notifier.getData();
+            printLog(textToShow);
+            bool alive = textToShow.contains(':');
+            if (alive) {
+              parts = textToShow.split(':');
+            }
+            return Center(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 300,
+                      child: TextField(
+                        style: const TextStyle(color: Color(0xfffbe4d8)),
+                        controller: productCodeController,
+                        keyboardType: TextInputType.text,
+                        decoration: const InputDecoration(
+                          labelText: 'Ingrese el código de producto',
+                          labelStyle: TextStyle(color: Color(0xfffbe4d8)),
+                          hintStyle: TextStyle(color: Color(0xfffbe4d8)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: 300,
+                      child: TextField(
+                        style: const TextStyle(color: Color(0xfffbe4d8)),
+                        controller: serialNumberController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Ingrese el número de serie',
+                          labelStyle: TextStyle(color: Color(0xfffbe4d8)),
+                          hintStyle: TextStyle(color: Color(0xfffbe4d8)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 80,
+                          child: TextField(
+                            style: const TextStyle(color: Color(0xfffbe4d8)),
+                            controller: cmdController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Comando:',
+                              labelStyle: TextStyle(color: Color(0xfffbe4d8)),
+                              hintStyle: TextStyle(color: Color(0xfffbe4d8)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        SizedBox(
+                          width: 200,
+                          child: TextField(
+                            style: const TextStyle(color: Color(0xfffbe4d8)),
+                            controller: contentController,
+                            keyboardType: TextInputType.text,
+                            decoration: InputDecoration(
+                              labelText: 'Contenido:',
+                              hintText: hintAWS(cmdController.text),
+                              labelStyle:
+                                  const TextStyle(color: Color(0xfffbe4d8)),
+                              hintStyle:
+                                  const TextStyle(color: Color(0xfffbe4d8)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(
+                      height: 20,
+                    ),
+                    ElevatedButton(
+                        onPressed: () {
+                          String topic =
+                              'tools/${productCodeController.text.trim()}/${serialNumberController.text.trim()}';
+                          subToTopicMQTT(topic);
+                          listenToTopics();
+                          String msg = jsonEncode({
+                            'cmd': cmdController.text.trim(),
+                            'content': contentController.text.trim()
+                          });
+                          registerActivity(
+                              productCodeController.text.trim(),
+                              serialNumberController.text.trim(),
+                              'Se envio via mqtt: $msg');
+                          sendMessagemqtt(topic, msg);
+                        },
+                        child: const Text('Enviar comando')),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        String topic =
+                            'tools/${productCodeController.text.trim()}/${serialNumberController.text.trim()}';
+                        unSubToTopicMQTT(topic);
+                        setState(() {
+                          productCodeController.clear();
+                          serialNumberController.clear();
+                          notifier.updateData('Esperando respuesta del esp...');
+                        });
+                      },
+                      child: const Text('Borrar equipo'),
+                    ),
+                    const SizedBox(
+                      height: 5,
+                    ),
+                    TextButton(
+                        onPressed: () {
+                          String topic =
+                              'tools/${productCodeController.text.trim()}/${serialNumberController.text.trim()}';
+                          subToTopicMQTT(topic);
+                          listenToTopics();
+                          String msg = jsonEncode({'alive': true});
+                          registerActivity(
+                              productCodeController.text.trim(),
+                              serialNumberController.text.trim(),
+                              'Se envio via mqtt: $msg');
+                          sendMessagemqtt(topic, msg);
+                        },
+                        child: const Text('Verificar conexión equipo')),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    Container(
+                      width: 300,
+                      height: 300,
+                      decoration: BoxDecoration(
+                        color: const Color(0xff2b124c),
+                        borderRadius: BorderRadius.circular(20),
+                        border: const Border(
+                          bottom:
+                              BorderSide(color: Color(0xff854f6c), width: 5),
+                          right: BorderSide(color: Color(0xff854f6c), width: 5),
+                          left: BorderSide(color: Color(0xff854f6c), width: 5),
+                          top: BorderSide(color: Color(0xff854f6c), width: 5),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          const Text(
+                            'Respuesta:',
+                            style: TextStyle(
+                                color: Color(0xFFdfb6b2),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 30),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(
+                            height: 20,
+                          ),
+                          if (alive) ...[
+                            Text(
+                              'SoftVer: ${parts[2]}\nHardVer: ${parts[3]}\nOwner: ${parts[4]}',
+                              style: const TextStyle(
+                                  color: Color(0xFFdfb6b2), fontSize: 30),
+                              textAlign: TextAlign.start,
+                            ),
+                          ] else ...[
+                            Text(
+                              textToShow,
+                              style: const TextStyle(
+                                  color: Color(0xFFdfb6b2), fontSize: 30),
+                              textAlign: TextAlign.center,
+                            ),
+                          ]
+                        ],
+                      ),
+                    )
+                  ],
+                ),
+              ),
+            );
+          },
+        ));
+  }
 }
 
 //REGBANK TAB //Regbank associates
@@ -480,7 +716,6 @@ class RegbankTabState extends State<RegbankTab> {
   @override
   void initState() {
     super.initState();
-    setupMqtt5773();
     var formatter = DateFormat('yyyy-MM-dd HH:mm:ss.SSS');
     printLog(formatter.format(DateTime.now()));
   }
@@ -718,7 +953,7 @@ class RegbankTabState extends State<RegbankTab> {
     return '${time.inMinutes}:${(time.inSeconds % 60).toString().padLeft(2, '0')}';
   }
 
-  void setupMqtt5773() async {
+  Future<void> setupMqtt5773() async {
     try {
       printLog('Haciendo setup');
       String deviceId = 'FlutterApp/${generateRandomNumbers(32)}';
@@ -727,7 +962,7 @@ class RegbankTabState extends State<RegbankTab> {
       mqttClient5773 = MqttServerClient.withPort(hostname, deviceId, 1883);
 
       mqttClient5773!.logging(on: true);
-      mqttClient5773!.onDisconnected = mqttonDisconnected;
+      mqttClient5773!.onDisconnected = mqttonDisconnected5773;
 
       // Configuración de las credenciales
       mqttClient5773!.setProtocolV311();
@@ -740,12 +975,12 @@ class RegbankTabState extends State<RegbankTab> {
     }
   }
 
-  void mqttonDisconnected() {
+  void mqttonDisconnected5773() {
     printLog('Desconectado de mqtt');
     setupMqtt5773();
   }
 
-  void sendMessagemqtt(String topic, String message) {
+  void sendMessagemqtt5773(String topic, String message) {
     final MqttClientPayloadBuilder builder = MqttClientPayloadBuilder();
     builder.addString(message);
 
@@ -753,15 +988,15 @@ class RegbankTabState extends State<RegbankTab> {
         .publishMessage(topic, MqttQos.exactlyOnce, builder.payload!);
   }
 
-  void subToTopicMQTT(String topic) {
+  void subToTopicMQTT5773(String topic) {
     mqttClient5773!.subscribe(topic, MqttQos.atLeastOnce);
   }
 
-  void unSubToTopicMQTT(String topic) {
+  void unSubToTopicMQTT5773(String topic) {
     mqttClient5773!.unsubscribe(topic);
   }
 
-  void listenToTopics() {
+  void listenToTopics5773() {
     mqttClient5773!.updates?.listen((List<MqttReceivedMessage<MqttMessage>> c) {
       final MqttPublishMessage recMess = c[0].payload as MqttPublishMessage;
       final String topic = c[0].topic;
@@ -900,344 +1135,343 @@ class RegbankTabState extends State<RegbankTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xff190019),
-      body: login
-          ? SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(
-                    height: 50,
-                  ),
-                  if (!hearing) ...[
-                    Text(
-                      textToShow(step),
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Color(0xFFdfb6b2)),
-                    ),
-                    Center(
-                      child: SizedBox(
-                        width: 300,
-                        child: TextField(
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Color(0xfffbe4d8)),
-                          decoration: InputDecoration(
-                              suffixIcon: IconButton(
-                            onPressed: () {
-                              showDialog(
-                                context: navigatorKey.currentContext!,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    title: const Center(
-                                        child: Text(
-                                      'Borrar lista de números',
-                                      style: TextStyle(
-                                          color: Colors.black,
-                                          fontWeight: FontWeight.bold),
-                                    )),
-                                    content: const Text(
-                                        'Esta acción no puede revertirse'),
-                                    actions: [
-                                      TextButton(
-                                          onPressed: () {
-                                            setState(() {
-                                              numbers.clear();
-                                            });
-                                            navigatorKey.currentState!.pop();
-                                          },
-                                          child: const Text('Borrar'))
-                                    ],
-                                  );
-                                },
-                              );
-                            },
-                            icon: const Icon(Icons.delete_forever),
-                          )),
-                          focusNode: registerFocusNode,
-                          controller: numbersController,
-                          keyboardType: TextInputType.number,
-                          onSubmitted: (value) {
-                            if (step == 0) {
-                              header = value;
-                              step = step + 1;
-                              numbersController.clear();
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                registerFocusNode.requestFocus();
-                              });
-                            } else if (step == 1) {
-                              initialvalue = value;
-                              numbersController.clear();
-                              step = step + 1;
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                registerFocusNode.requestFocus();
-                              });
-                            } else if (step == 2) {
-                              finalvalue = value;
-                              numbers.addAll(generateSerialNumbers(
-                                  header,
-                                  int.parse(initialvalue),
-                                  int.parse(finalvalue)));
-                              printLog('Lista: $numbers');
-                              numbersController.clear();
-                              step = 0;
-                            }
-                            setState(() {});
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 30,
-                    ),
-                  ],
-                  numbers.isNotEmpty &&
-                          mqttClient5773!.connectionStatus!.state ==
-                              MqttConnectionState.connected
-                      ? ElevatedButton(
-                          onPressed: () {
-                            if (!hearing) {
-                              try {
-                                for (int i = 0; i < numbers.length; i++) {
-                                  String topic = '015773_IOT/${numbers[i]}';
-                                  subToTopicMQTT(topic);
-                                }
-                              } catch (e, s) {
-                                printLog('Error al sub $e $s');
-                              }
-                              listenToTopics();
-                              startTimer();
-                              hearing = true;
-                            } else {
-                              try {
-                                for (int i = 0; i < numbers.length; i++) {
-                                  String topic = '015773_IOT/${numbers[i]}';
-                                  unSubToTopicMQTT(topic);
-                                }
-                              } catch (e, s) {
-                                printLog('Error al unsub $e $s');
-                              }
-                              hearing = false;
-                              stopwatch!.stop();
-                              timer!.cancel();
-
-                              //Crear Sheet aca
-                              mapasDatos.addAll([
-                                streamData,
-                                diagnosis,
-                                regDone,
-                                espUpdate,
-                                picUpdate,
-                                regPoint1,
-                                regPoint2,
-                                regPoint3,
-                                regPoint4,
-                                regPoint5,
-                                regPoint6,
-                                regPoint7,
-                                regPoint8,
-                                regPoint9,
-                                regPoint10
-                              ]);
-
-                              try {
-                                exportDataToGoogleSheet(mapasDatos);
-                                exportDataAndShare(mapasDatos);
-                              } catch (e, s) {
-                                printLog('Lol $e $s');
-                              }
-                              setState(() {});
-                            }
-                          },
-                          child: hearing
-                              ? const Text(
-                                  'Cancelar la escucha',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(color: Color(0xFFdfb6b2)),
-                                )
-                              : const Text(
-                                  'Iniciar la escucha',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(color: Color(0xFFdfb6b2)),
-                                ),
-                        )
-                      : Container(),
-                  const SizedBox(
-                    height: 30,
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      showDialog(
-                        context: navigatorKey.currentContext!,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: const Center(
-                                child: Text(
-                              'Borrar datos de la hoja de calculos',
-                              style: TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold),
-                            )),
-                            content: const Text(
-                                'Esta acción no puede revertirse\nTodos los datos que había en la hoja de calculo se perderán.'),
-                            actions: [
-                              TextButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      wipeSheet();
-                                    });
-                                    navigatorKey.currentState!.pop();
-                                  },
-                                  child: const Text('Borrar'))
-                            ],
-                          );
-                        },
-                      );
-                    },
-                    child: const Text('Borrar datos de la hoja de calculo'),
-                  ),
-                  if (hearing) ...[
-                    const SizedBox(
-                      height: 30,
-                    ),
-                    ElevatedButton(
-                      style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all<Color>(
-                            const Color(0xFF522B5B)),
-                        foregroundColor: MaterialStateProperty.all<Color>(
-                            const Color(0xFFdfb6b2)),
-                      ),
-                      onPressed: () {
-                        sendMessagemqtt('015773_RB', 'DIAGNOSIS_OK');
-                      },
-                      child: const Text('Hacer Diagnosis OK'),
-                    ),
-                    const SizedBox(
-                      height: 30,
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        String url =
-                            'https://github.com/CrisDores/57_IOT_PUBLIC/raw/main/57_ota_factory_fw/firmware.bin';
-                        sendMessagemqtt('015773_RB', 'ESP_UPDATE($url)');
-                      },
-                      child: const Text('OTA ESP'),
-                    ),
-                    const SizedBox(
-                      height: 30,
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        String url =
-                            'https://github.com/CrisDores/57_IOT_PUBLIC/raw/main/57_ota_factory_fw/firmware.bin';
-                        sendMessagemqtt('015773_RB', 'PIC_UPDATE($url)');
-                      },
-                      child: const Text('OTA PIC'),
-                    ),
-                    const SizedBox(
-                      height: 30,
-                    ),
-                    Text(
-                      'RP ${_rp.round()}',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                          color: Color(0xFFdfb6b2), fontSize: 30),
-                    ),
-                    const SizedBox(
-                      height: 5,
-                    ),
-                    SliderTheme(
-                      data: SliderTheme.of(context).copyWith(
-                          disabledActiveTrackColor: const Color(0xff2b124c),
-                          disabledInactiveTrackColor: const Color(0xFF522b5b),
-                          trackHeight: 20,
-                          thumbShape: SliderComponentShape.noThumb),
-                      child: Slider(
-                        value: _rp,
-                        divisions: 11,
-                        min: 0,
-                        max: 11,
-                        onChanged: (value) {
-                          if (0 < value && value < 11) {
-                            setState(() {
-                              _rp = value;
-                            });
-                          }
-                        },
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    SizedBox(
-                      width: 300,
-                      child: TextField(
-                        textAlign: TextAlign.center,
-                        keyboardType: TextInputType.number,
-                        style: const TextStyle(color: Color(0xfffbe4d8)),
-                        decoration: const InputDecoration(
-                            labelText: 'Temperatura (°C)',
-                            labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                            hintText: 'Añadir temperatura',
-                            hintStyle: TextStyle(
-                                color: Color(0xfffbe4d8),
-                                fontWeight: FontWeight.normal)),
-                        onChanged: (value) {
-                          temp = value;
-                        },
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        sendMessagemqtt('015773_RB', 'REGPOINT_${_rp}_($temp)');
-                      },
-                      child: const Text('Enviar RegPoint'),
-                    ),
-                    const SizedBox(
-                      height: 30,
-                    ),
-                    Text(
-                      'Tiempo transcurrido: ${elapsedTime()}',
+        backgroundColor: const Color(0xff190019),
+        body: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(
+                height: 50,
+              ),
+              if (!hearing) ...[
+                Text(
+                  textToShow(step),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Color(0xFFdfb6b2)),
+                ),
+                Center(
+                  child: SizedBox(
+                    width: 300,
+                    child: TextField(
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: Color(0xfffbe4d8)),
-                    ),
-                  ],
-                ],
-              ),
-            )
-          : Center(
-              child: Column(
-                children: [
-                  const SizedBox(
-                    height: 200,
-                  ),
-                  SizedBox(
-                      width: 300,
-                      child: TextField(
-                        style: const TextStyle(color: Color(0xfffbe4d8)),
-                        controller: loginController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Ingresa la contraseña',
-                          labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                          hintStyle: TextStyle(color: Color(0xfffbe4d8)),
-                        ),
-                        onSubmitted: (value) {
-                          if (loginController.text == '05112004') {
-                            setState(() {
-                              login = true;
-                            });
-                          } else {
-                            showToast('Contraseña equivocada');
-                          }
+                      decoration: InputDecoration(
+                          suffixIcon: IconButton(
+                        onPressed: () {
+                          showDialog(
+                            context: navigatorKey.currentContext!,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: const Center(
+                                    child: Text(
+                                  'Borrar lista de números',
+                                  style: TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold),
+                                )),
+                                content: const Text(
+                                    'Esta acción no puede revertirse'),
+                                actions: [
+                                  TextButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          numbers.clear();
+                                        });
+                                        navigatorKey.currentState!.pop();
+                                      },
+                                      child: const Text('Borrar'))
+                                ],
+                              );
+                            },
+                          );
                         },
+                        icon: const Icon(Icons.delete_forever),
                       )),
-                ],
+                      focusNode: registerFocusNode,
+                      controller: numbersController,
+                      keyboardType: TextInputType.number,
+                      onSubmitted: (value) {
+                        if (step == 0) {
+                          header = value;
+                          step = step + 1;
+                          numbersController.clear();
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            registerFocusNode.requestFocus();
+                          });
+                        } else if (step == 1) {
+                          initialvalue = value;
+                          numbersController.clear();
+                          step = step + 1;
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            registerFocusNode.requestFocus();
+                          });
+                        } else if (step == 2) {
+                          finalvalue = value;
+                          numbers.addAll(generateSerialNumbers(header,
+                              int.parse(initialvalue), int.parse(finalvalue)));
+                          printLog('Lista: $numbers');
+                          numbersController.clear();
+                          step = 0;
+                        }
+                        setState(() {});
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(
+                  height: 30,
+                ),
+              ],
+              numbers.isNotEmpty &&
+                      mqttClient5773!.connectionStatus!.state ==
+                          MqttConnectionState.connected
+                  ? ElevatedButton(
+                      onPressed: () {
+                        if (!hearing) {
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (BuildContext dialogContext) {
+                              return AlertDialog(
+                                title: const Text(
+                                  '¿Estas seguro que quieres hacer esto?',
+                                  style: TextStyle(fontSize: 30),
+                                ),
+                                content: const Text(
+                                  'Estas por empezar el proceso de regulación\nDe realizarse mal este proceso puede afectar al funcionamiento de los equipos',
+                                  style: TextStyle(fontSize: 20),
+                                ),
+                                actions: <Widget>[
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(dialogContext).pop(),
+                                    child: const Text('Cancelar'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () async {
+                                      registerActivity('Global', 'Regbank',
+                                          'Se inicio regbank para ${numbers.length} equipos');
+                                      try {
+                                        await setupMqtt5773();
+                                        for (int i = 0;
+                                            i < numbers.length;
+                                            i++) {
+                                          String topic =
+                                              '015773_IOT/${numbers[i]}';
+                                          subToTopicMQTT5773(topic);
+                                        }
+                                      } catch (e, s) {
+                                        printLog('Error al sub $e $s');
+                                      }
+                                      listenToTopics5773();
+                                      startTimer();
+                                      hearing = true;
+                                    },
+                                    child: const Text('Iniciar escucha'),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        } else {
+                          try {
+                            for (int i = 0; i < numbers.length; i++) {
+                              String topic = '015773_IOT/${numbers[i]}';
+                              unSubToTopicMQTT5773(topic);
+                            }
+                          } catch (e, s) {
+                            printLog('Error al unsub $e $s');
+                          }
+                          hearing = false;
+                          stopwatch!.stop();
+                          timer!.cancel();
+
+                          //Crear Sheet aca
+                          mapasDatos.addAll([
+                            streamData,
+                            diagnosis,
+                            regDone,
+                            espUpdate,
+                            picUpdate,
+                            regPoint1,
+                            regPoint2,
+                            regPoint3,
+                            regPoint4,
+                            regPoint5,
+                            regPoint6,
+                            regPoint7,
+                            regPoint8,
+                            regPoint9,
+                            regPoint10
+                          ]);
+
+                          try {
+                            exportDataToGoogleSheet(mapasDatos);
+                            exportDataAndShare(mapasDatos);
+                          } catch (e, s) {
+                            printLog('Lol $e $s');
+                          }
+                          setState(() {});
+                        }
+                      },
+                      child: hearing
+                          ? const Text(
+                              'Cancelar la escucha',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Color(0xFFdfb6b2)),
+                            )
+                          : const Text(
+                              'Iniciar la escucha',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Color(0xFFdfb6b2)),
+                            ),
+                    )
+                  : Container(),
+              const SizedBox(
+                height: 30,
               ),
-            ),
-    );
+              ElevatedButton(
+                onPressed: () {
+                  showDialog(
+                    context: navigatorKey.currentContext!,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: const Center(
+                            child: Text(
+                          'Borrar datos de la hoja de calculos',
+                          style: TextStyle(
+                              color: Colors.black, fontWeight: FontWeight.bold),
+                        )),
+                        content: const Text(
+                            'Esta acción no puede revertirse\nTodos los datos que había en la hoja de calculo se perderán.'),
+                        actions: [
+                          TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  wipeSheet();
+                                });
+                                navigatorKey.currentState!.pop();
+                              },
+                              child: const Text('Borrar'))
+                        ],
+                      );
+                    },
+                  );
+                },
+                child: const Text('Borrar datos de la hoja de calculo'),
+              ),
+              if (hearing) ...[
+                const SizedBox(
+                  height: 30,
+                ),
+                ElevatedButton(
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all<Color>(
+                        const Color(0xFF522B5B)),
+                    foregroundColor: MaterialStateProperty.all<Color>(
+                        const Color(0xFFdfb6b2)),
+                  ),
+                  onPressed: () {
+                    sendMessagemqtt5773('015773_RB', 'DIAGNOSIS_OK');
+                  },
+                  child: const Text('Hacer Diagnosis OK'),
+                ),
+                const SizedBox(
+                  height: 30,
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    String url =
+                        'https://github.com/CrisDores/57_IOT_PUBLIC/raw/main/57_ota_factory_fw/firmware.bin';
+                    sendMessagemqtt5773('015773_RB', 'ESP_UPDATE($url)');
+                  },
+                  child: const Text('OTA ESP'),
+                ),
+                const SizedBox(
+                  height: 30,
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    String url =
+                        'https://github.com/CrisDores/57_IOT_PUBLIC/raw/main/57_ota_factory_fw/firmware.bin';
+                    sendMessagemqtt5773('015773_RB', 'PIC_UPDATE($url)');
+                  },
+                  child: const Text('OTA PIC'),
+                ),
+                const SizedBox(
+                  height: 30,
+                ),
+                Text(
+                  'RP ${_rp.round()}',
+                  textAlign: TextAlign.center,
+                  style:
+                      const TextStyle(color: Color(0xFFdfb6b2), fontSize: 30),
+                ),
+                const SizedBox(
+                  height: 5,
+                ),
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                      disabledActiveTrackColor: const Color(0xff2b124c),
+                      disabledInactiveTrackColor: const Color(0xFF522b5b),
+                      trackHeight: 20,
+                      thumbShape: SliderComponentShape.noThumb),
+                  child: Slider(
+                    value: _rp,
+                    divisions: 11,
+                    min: 0,
+                    max: 11,
+                    onChanged: (value) {
+                      if (0 < value && value < 11) {
+                        setState(() {
+                          _rp = value;
+                        });
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                SizedBox(
+                  width: 300,
+                  child: TextField(
+                    textAlign: TextAlign.center,
+                    keyboardType: TextInputType.number,
+                    style: const TextStyle(color: Color(0xfffbe4d8)),
+                    decoration: const InputDecoration(
+                        labelText: 'Temperatura (°C)',
+                        labelStyle: TextStyle(color: Color(0xfffbe4d8)),
+                        hintText: 'Añadir temperatura',
+                        hintStyle: TextStyle(
+                            color: Color(0xfffbe4d8),
+                            fontWeight: FontWeight.normal)),
+                    onChanged: (value) {
+                      temp = value;
+                    },
+                  ),
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    sendMessagemqtt5773('015773_RB', 'REGPOINT_${_rp}_($temp)');
+                  },
+                  child: const Text('Enviar RegPoint'),
+                ),
+                const SizedBox(
+                  height: 30,
+                ),
+                Text(
+                  'Tiempo transcurrido: ${elapsedTime()}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Color(0xfffbe4d8)),
+                ),
+              ],
+            ],
+          ),
+        ));
   }
 }
 
@@ -1253,8 +1487,8 @@ class Ota2Tab extends StatefulWidget {
 class Ota2TabState extends State<Ota2Tab> {
   final TextEditingController verSoftController = TextEditingController();
   final TextEditingController verHardController = TextEditingController();
-  final TextEditingController loginController = TextEditingController();
-  bool login = false;
+  final TextEditingController productCodeController = TextEditingController();
+  bool productCodeAdded = false;
   bool versionSoftAdded = false;
   bool versionHardAdded = false;
 
@@ -1263,93 +1497,150 @@ class Ota2TabState extends State<Ota2Tab> {
     return Scaffold(
       backgroundColor: const Color(0xff190019),
       body: Center(
-        child: login
-            ? SingleChildScrollView(
-                child: Column(
-                  children: [
-                    SizedBox(
-                        width: 300,
-                        child: TextField(
-                          style: const TextStyle(color: Color(0xfffbe4d8)),
-                          controller: verSoftController,
-                          keyboardType: TextInputType.text,
-                          decoration: const InputDecoration(
-                            labelText: 'Ingrese la versión de software',
-                            labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                            hintStyle: TextStyle(color: Color(0xfffbe4d8)),
+          child: SingleChildScrollView(
+        child: Column(
+          children: [
+            SizedBox(
+                width: 300,
+                child: TextField(
+                  style: const TextStyle(color: Color(0xfffbe4d8)),
+                  controller: productCodeController,
+                  keyboardType: TextInputType.text,
+                  decoration: InputDecoration(
+                    labelText: 'Ingrese el código de producto',
+                    labelStyle: const TextStyle(color: Color(0xfffbe4d8)),
+                    hintStyle: const TextStyle(color: Color(0xfffbe4d8)),
+                    suffixIcon: productCodeAdded
+                        ? const Icon(
+                            Icons.check_circle_outline_outlined,
+                            color: Colors.green,
+                          )
+                        : const Icon(
+                            Icons.cancel_rounded,
+                            color: Colors.red,
                           ),
-                          onSubmitted: (value) {
-                            versionSoftAdded = true;
-                          },
-                        )),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                        width: 300,
-                        child: TextField(
-                          style: const TextStyle(color: Color(0xfffbe4d8)),
-                          controller: verHardController,
-                          keyboardType: TextInputType.text,
-                          decoration: const InputDecoration(
-                            labelText: 'Ingrese la versión de hardware',
-                            labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                            hintStyle: TextStyle(color: Color(0xfffbe4d8)),
+                  ),
+                  onChanged: (value) {
+                    productCodeAdded = true;
+                    setState(() {});
+                  },
+                )),
+            const SizedBox(height: 20),
+            SizedBox(
+                width: 300,
+                child: TextField(
+                  style: const TextStyle(color: Color(0xfffbe4d8)),
+                  controller: verSoftController,
+                  keyboardType: TextInputType.text,
+                  decoration: InputDecoration(
+                    labelText: 'Ingrese la versión de software',
+                    labelStyle: const TextStyle(color: Color(0xfffbe4d8)),
+                    hintStyle: const TextStyle(color: Color(0xfffbe4d8)),
+                    suffixIcon: versionSoftAdded
+                        ? const Icon(
+                            Icons.check_circle_outline_outlined,
+                            color: Colors.green,
+                          )
+                        : const Icon(
+                            Icons.cancel_rounded,
+                            color: Colors.red,
                           ),
-                          onSubmitted: (value) {
-                            versionHardAdded = true;
-                          },
-                        )),
-                    const SizedBox(
-                      height: 30,
-                    ),
-                    ElevatedButton(
-                        onPressed: () {
-                          if (versionSoftAdded && versionHardAdded) {
-                            showToast(
-                                'Esta parte no esta implementada todavia');
-                            versionSoftAdded = false;
-                            versionHardAdded = false;
-                            verHardController.clear();
-                            verSoftController.clear();
-                          } else {
-                            showToast(
-                                'Debes agregar las versiones\nAntes de enviar la OTA');
-                          }
-                        },
-                        child: const Text('Hacer OTA global'))
-                  ],
-                ),
-              )
-            : Center(
-                child: Column(
-                  children: [
-                    const SizedBox(
-                      height: 200,
-                    ),
-                    SizedBox(
-                        width: 300,
-                        child: TextField(
-                          style: const TextStyle(color: Color(0xfffbe4d8)),
-                          controller: loginController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Ingresa la contraseña',
-                            labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                            hintStyle: TextStyle(color: Color(0xfffbe4d8)),
+                  ),
+                  onChanged: (value) {
+                    versionSoftAdded = true;
+                    setState(() {});
+                  },
+                )),
+            const SizedBox(height: 20),
+            SizedBox(
+                width: 300,
+                child: TextField(
+                  style: const TextStyle(color: Color(0xfffbe4d8)),
+                  controller: verHardController,
+                  keyboardType: TextInputType.text,
+                  decoration: InputDecoration(
+                    labelText: 'Ingrese la versión de hardware',
+                    labelStyle: const TextStyle(color: Color(0xfffbe4d8)),
+                    hintStyle: const TextStyle(color: Color(0xfffbe4d8)),
+                    suffixIcon: versionHardAdded
+                        ? const Icon(
+                            Icons.check_circle_outline_outlined,
+                            color: Colors.green,
+                          )
+                        : const Icon(
+                            Icons.cancel_rounded,
+                            color: Colors.red,
                           ),
-                          onSubmitted: (value) {
-                            if (loginController.text == '05112004') {
-                              setState(() {
-                                login = true;
+                  ),
+                  onChanged: (value) {
+                    versionHardAdded = true;
+                    setState(() {});
+                  },
+                )),
+            const SizedBox(
+              height: 30,
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (versionSoftAdded && versionHardAdded && productCodeAdded) {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (BuildContext dialogContext) {
+                      return AlertDialog(
+                        title: const Text(
+                          '¿Estas seguro de lo estas por hacer?',
+                          style: TextStyle(fontSize: 30),
+                        ),
+                        content: const Text(
+                          'Enviar ota sin estar seguro de lo que haces puede afectar el funcionamiento de todos los equipos.',
+                          style: TextStyle(fontSize: 20),
+                        ),
+                        actions: <Widget>[
+                          TextButton(
+                            onPressed: () => Navigator.of(dialogContext).pop(),
+                            child: const Text('Cancelar'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              registerActivity('Global', 'OTA',
+                                  'Se envio OTA global para los equipos ${productCodeController.text.trim()}. DATA: ${verHardController.text.trim()}#${verSoftController.text.trim()}');
+                              String topic =
+                                  'tools/${productCodeController.text.trim()}/global';
+                              String msg = jsonEncode({
+                                'cmd': '2',
+                                'content':
+                                    '${verHardController.text.trim()}#${verSoftController.text.trim()}'
                               });
-                            } else {
-                              showToast('Contraseña equivocada');
-                            }
-                          },
-                        )),
-                  ],
-                ),
-              ),
-      ),
+                              sendMessagemqtt(topic, msg);
+
+                              setState(() {
+                                productCodeAdded = false;
+                                versionSoftAdded = false;
+                                versionHardAdded = false;
+                                productCodeController.clear();
+                                verHardController.clear();
+                                verSoftController.clear();
+                              });
+                              showToast('Ota realizada');
+                              Navigator.of(dialogContext).pop();
+                            },
+                            child: const Text('Hacer OTA'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                } else {
+                  showToast(
+                      'Debes agregar las versiones\nAntes de enviar la OTA');
+                }
+              },
+              child: const Text('Hacer OTA global'),
+            ),
+          ],
+        ),
+      )),
     );
   }
 }
@@ -1404,9 +1695,15 @@ class LoadState extends State<LoadingPage> {
         varsValues = await myDevice.varsUuid.read();
         var parts2 = utf8.decode(varsValues).split(':');
         printLog('$parts2');
+        tempValue = double.parse(parts2[0]);
         turnOn = parts2[1] == '1';
         trueStatus = parts2[3] == '1';
         nightMode = parts2[4] == '1';
+        actualTemp = parts2[5];
+        if (factoryMode) {
+          awsInit = parts2[5] == '1';
+          tempMap = parts2[6] == '1';
+        }
         printLog('Estado: $turnOn');
       } else if (deviceType == '015773') {
         //Si soy un detector

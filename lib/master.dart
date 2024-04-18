@@ -3,10 +3,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:share/share.dart';
 
@@ -26,6 +28,7 @@ List<int> varsValues = [];
 List<int> ioValues = [];
 String myDeviceid = '';
 String deviceName = '';
+String serialNumber = '';
 bool bluetoothOn = true;
 String wifiName = '';
 String wifiPassword = '';
@@ -49,6 +52,11 @@ String textState = '';
 String errorMessage = '';
 String errorSintax = '';
 Timer? bluetoothTimer;
+String actualTemp = '';
+bool awsInit = false;
+bool tempMap = false;
+double tempValue = 0.0;
+String owner = '';
 
 bool alreadySubReg = false;
 bool alreadySubCal = false;
@@ -56,6 +64,8 @@ bool alreadySubOta = false;
 bool alreadySubDebug = false;
 bool alreadySubWork = false;
 bool alreadySubIO = false;
+
+String deviceResponseMqtt = '';
 
 // Si esta en modo profile.
 const bool xProfileMode = bool.fromEnvironment('dart.vm.profile');
@@ -66,7 +76,7 @@ const bool xDebugMode = !xProfileMode && !xReleaseMode;
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
-String appVersionNumber = '24041202';
+String appVersionNumber = '24041800';
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
@@ -375,6 +385,149 @@ void showBleText() async {
   }
 }
 
+void registerActivity(
+    String productCode, String serialNumber, String accion) async {
+  try {
+    FirebaseFirestore db = FirebaseFirestore.instance;
+
+    String diaDeLaFecha =
+        DateTime.now().toString().split(' ')[0].replaceAll('-', '');
+
+    String documentPath = '$productCode:$serialNumber';
+
+    String actionListName = '$diaDeLaFecha:$legajoConectado';
+
+    DocumentReference docRef = db.collection('Registro').doc(documentPath);
+
+    DocumentSnapshot doc = await docRef.get();
+
+    if (!doc.exists) {
+      await docRef.set({
+        actionListName: FieldValue.arrayUnion([accion])
+      }).then((_) {
+        printLog("Documento creado exitosamente!");
+      }).catchError((error) {
+        printLog("Error creando el documento: $error");
+      });
+    } else {
+      printLog("Documento ya existe.");
+      await docRef.update({
+        actionListName: FieldValue.arrayUnion([accion])
+      }).catchError(
+          (error) => printLog("Error al añadir item al array: $error"));
+    }
+  } catch (e, s) {
+    printLog('Error al registrar actividad: $e');
+    printLog(s);
+  }
+}
+
+void wifiText(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Row(children: [
+          const Text.rich(TextSpan(
+              text: 'Estado de conexión: ',
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 14,
+              ))),
+          Text.rich(TextSpan(
+              text: textState,
+              style: TextStyle(
+                  color: statusColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold)))
+        ]),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text.rich(TextSpan(
+                  text: 'Error: $errorMessage',
+                  style: const TextStyle(
+                    fontSize: 10,
+                  ))),
+              const SizedBox(height: 10),
+              Text.rich(TextSpan(
+                  text: 'Sintax: $errorSintax',
+                  style: const TextStyle(
+                    fontSize: 10,
+                  ))),
+              const SizedBox(height: 10),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(children: [
+                  const Text.rich(
+                    TextSpan(
+                      text: 'Red actual: ',
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Text(
+                    nameOfWifi,
+                    style: const TextStyle(fontSize: 20),
+                  ),
+                ]),
+              ),
+              const SizedBox(height: 10),
+              const Text.rich(TextSpan(
+                  text: 'Ingrese los datos de WiFi',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
+              IconButton(
+                icon: const Icon(Icons.qr_code),
+                iconSize: 50,
+                onPressed: () async {
+                  PermissionStatus permissionStatusC =
+                      await Permission.camera.request();
+                  if (!permissionStatusC.isGranted) {
+                    await Permission.camera.request();
+                  }
+                  permissionStatusC = await Permission.camera.status;
+                  if (permissionStatusC.isGranted) {
+                    openQRScanner(navigatorKey.currentContext!);
+                  }
+                },
+              ),
+              TextField(
+                decoration: const InputDecoration(hintText: 'Nombre de la red'),
+                onChanged: (value) {
+                  wifiName = value;
+                },
+              ),
+              TextField(
+                decoration: const InputDecoration(hintText: 'Contraseña'),
+                obscureText: true,
+                onChanged: (value) {
+                  wifiPassword = value;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            child: const Text('Cancelar'),
+            onPressed: () {
+              navigatorKey.currentState?.pop();
+            },
+          ),
+          TextButton(
+            child: const Text('Aceptar'),
+            onPressed: () {
+              sendWifitoBle();
+              navigatorKey.currentState?.pop();
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
 // CLASES //
 
 //*BLUETOOTH*//
@@ -423,9 +576,12 @@ class MyDevice {
       String str = utf8.decode(infoValues);
       var partes = str.split(':');
       var fun = partes[0].split('_');
+      factoryMode = partes[2].contains('_F');
       deviceType = fun[0];
       softwareVersion = partes[2];
       hardwareVersion = partes[3];
+      owner = partes[4];
+      serialNumber = partes[1];
       printLog('Device: $deviceType');
       printLog('Product code: ${partes[0]}');
       printLog('Serial number: ${extractSerialNumber(device.platformName)}');
@@ -438,7 +594,7 @@ class MyDevice {
           varsUuid = espService.characteristics.firstWhere((c) =>
               c.uuid ==
               Guid(
-                  '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //WorkingTemp:WorkingStatus:EnergyTimer:HeaterOn:NightMode
+                  '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //WorkingTemp:WorkingStatus:EnergyTimer:FlamingStatus:NightMode:actualTemp:Thing?:TempMap?:Offset
           otaUuid = espService.characteristics.firstWhere((c) =>
               c.uuid ==
               Guid(
@@ -471,7 +627,6 @@ class MyDevice {
                   'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
           break;
         case '015773':
-          factoryMode = partes[2].contains('_F');
           BluetoothService service = services.firstWhere(
               (s) => s.uuid == Guid('dd249079-0ce8-4d11-8aa9-53de4040aec6'));
 
@@ -706,5 +861,24 @@ class QRScanPageState extends State<QRScanPage>
     controller?.dispose();
     animationController?.dispose();
     super.dispose();
+  }
+}
+
+//*-Provider-*//Se actualizan cositas
+
+class GlobalDataNotifier extends ChangeNotifier {
+  String? _data;
+
+  // Obtener datos por topic específico
+  String getData() {
+    return _data ?? 'Esperando respuesta del esp...';
+  }
+
+  // Actualizar datos para un topic específico y notificar a los oyentes
+  void updateData(String newData) {
+    if (_data != newData) {
+      _data = newData;
+      notifyListeners(); // Esto notifica a todos los oyentes que algo cambió
+    }
   }
 }
