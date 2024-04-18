@@ -76,7 +76,7 @@ const bool xDebugMode = !xProfileMode && !xReleaseMode;
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
-String appVersionNumber = '24041800';
+String appVersionNumber = '24041801';
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
