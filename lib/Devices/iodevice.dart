@@ -9,7 +9,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 
 List<String> tipo = [];
-List<bool> estado = [];
+List<String> estado = [];
+List<bool> alertIO = [];
+List<String> common = [];
 
 class IODevicesTab extends StatefulWidget {
   const IODevicesTab({super.key});
@@ -339,16 +341,23 @@ class SetTabState extends State<SetTab> {
   void processValues(List<int> values) {
     ioValues = values;
     var parts = utf8.decode(values).split('/');
+    printLog(parts);
     tipo.clear();
     estado.clear();
+    common.clear();
+    alertIO.clear();
 
     for (int i = 0; i < parts.length; i++) {
       var equipo = parts[i].split(':');
       tipo.add(equipo[0] == '0' ? 'Salida' : 'Entrada');
-      estado.add(equipo[1] == '1');
+      estado.add(equipo[1]);
+      common.add(equipo[2]);
+      alertIO.add(estado[i] != common[i]);
 
       printLog(
           'En la posición $i el modo es ${tipo[i]} y su estado es ${estado[i]}');
+      printLog('Su posición es ${common[i]}');
+      printLog('¿Esta en alerta?: ${alertIO[i]}');
     }
 
     setState(() {});
@@ -397,7 +406,7 @@ class SetTabState extends State<SetTab> {
                   ),
                 ),
                 width: width - 50,
-                height: 200,
+                height: entrada ? 275 : 250,
                 child: Column(
                   children: [
                     Text(
@@ -412,15 +421,15 @@ class SetTabState extends State<SetTab> {
                       height: 10,
                     ),
                     entrada
-                        ? estado[index]
+                        ? alertIO[index]
                             ? const Icon(
                                 Icons.new_releases,
-                                color: Color(0xff9b9b9b),
+                                color: Color(0xffcb3234),
                                 size: 50,
                               )
                             : const Icon(
                                 Icons.new_releases,
-                                color: Color(0xffcb3234),
+                                color: Color(0xff9b9b9b),
                                 size: 50,
                               )
                         : Switch(
@@ -428,7 +437,7 @@ class SetTabState extends State<SetTab> {
                             activeTrackColor: const Color(0xff854f6c),
                             inactiveThumbColor: const Color(0xff854f6c),
                             inactiveTrackColor: const Color(0xfffbe4d8),
-                            value: estado[index],
+                            value: estado[index] == '1',
                             onChanged: (value) async {
                               String fun = '$index#${value ? '1' : '0'}';
                               await myDevice.ioUuid.write(fun.codeUnits);
@@ -436,6 +445,73 @@ class SetTabState extends State<SetTab> {
                           ),
                     const SizedBox(
                       height: 10,
+                    ),
+                    entrada
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              const SizedBox(
+                                width: 30,
+                              ),
+                              const Text(
+                                'Estado común:',
+                                style: TextStyle(
+                                    color: Color(0xfffbe4d8), fontSize: 15),
+                              ),
+                              const Spacer(),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 10),
+                                child: ChoiceChip(
+                                  label: const Text('0'),
+                                  selected: common[index] == '0',
+                                  shape: const OvalBorder(),
+                                  pressElevation: 5,
+                                  showCheckmark: false,
+                                  selectedColor: const Color(0xfffbe4d8),
+                                  onSelected: (value) {
+                                    common[index] = '0';
+                                    String data =
+                                        '${command(deviceType)}[14]($index#${common[index]})';
+                                    printLog(data);
+                                    myDevice.toolsUuid.write(data.codeUnits);
+                                  },
+                                ),
+                              ),
+                              const SizedBox(
+                                width: 10,
+                              ),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 10),
+                                child: ChoiceChip(
+                                  label: const Text('1'),
+                                  labelStyle:
+                                      const TextStyle(color: Color(0xff854f6c)),
+                                  selected: common[index] == '1',
+                                  shape: const OvalBorder(),
+                                  pressElevation: 5,
+                                  showCheckmark: false,
+                                  selectedColor: const Color(0xfffbe4d8),
+                                  onSelected: (value) {
+                                    common[index] = '1';
+                                    String data =
+                                        '${command(deviceType)}[14]($index#${common[index]})';
+                                    printLog(data);
+                                    myDevice.toolsUuid.write(data.codeUnits);
+                                  },
+                                ),
+                              ),
+                              const SizedBox(
+                                width: 10,
+                              ),
+                            ],
+                          )
+                        : const SizedBox(
+                            height: 10,
+                          ),
+                    const SizedBox(
+                      height: 5,
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.start,
@@ -449,13 +525,8 @@ class SetTabState extends State<SetTab> {
                               TextStyle(color: Color(0xfffbe4d8), fontSize: 15),
                         ),
                         const Spacer(),
-                        Switch(
-                          activeColor: const Color(0xfffbe4d8),
-                          activeTrackColor: const Color(0xff854f6c),
-                          inactiveThumbColor: const Color(0xff854f6c),
-                          inactiveTrackColor: const Color(0xfffbe4d8),
-                          value: entrada,
-                          onChanged: (value) {
+                        IconButton(
+                          onPressed: () {
                             showDialog(
                               context: context,
                               barrierDismissible: false,
@@ -486,6 +557,11 @@ class SetTabState extends State<SetTab> {
                               },
                             );
                           },
+                          icon: const Icon(
+                            Icons.change_circle_outlined,
+                            color: Color(0xFFdfb6b2),
+                            size: 30,
+                          ),
                         ),
                         const SizedBox(
                           width: 10,

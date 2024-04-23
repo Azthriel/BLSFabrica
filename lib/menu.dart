@@ -355,6 +355,17 @@ class ControlTabState extends State<ControlTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xff190019),
+      appBar: AppBar(
+        title: const Align(
+            alignment: Alignment.center,
+            child: Text(
+              'Registro de productos',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 18),
+            )),
+        backgroundColor: Colors.transparent,
+        foregroundColor: const Color(0xfffbe4d8),
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -480,6 +491,17 @@ class ToolsAWSState extends State<ToolsAWS> {
     return Scaffold(
         resizeToAvoidBottomInset: false,
         backgroundColor: const Color(0xff190019),
+        appBar: AppBar(
+        title: const Align(
+            alignment: Alignment.center,
+            child: Text(
+              'Customer service\nComandos a distancia',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 18),
+            )),
+        backgroundColor: Colors.transparent,
+        foregroundColor: const Color(0xfffbe4d8),
+      ),
         body: Consumer<GlobalDataNotifier>(
           builder: (context, notifier, child) {
             late List<String> parts;
@@ -953,7 +975,7 @@ class RegbankTabState extends State<RegbankTab> {
     return '${time.inMinutes}:${(time.inSeconds % 60).toString().padLeft(2, '0')}';
   }
 
-  Future<void> setupMqtt5773() async {
+  Future<bool> setupMqtt5773() async {
     try {
       printLog('Haciendo setup');
       String deviceId = 'FlutterApp/${generateRandomNumbers(32)}';
@@ -968,16 +990,29 @@ class RegbankTabState extends State<RegbankTab> {
       mqttClient5773!.setProtocolV311();
       mqttClient5773!.keepAlivePeriod = 3;
       await mqttClient5773!.connect();
-      printLog('Usuario conectado a mqtt');
+      printLog('Usuario conectado a mqtt mosquito');
       setState(() {});
+
+      return true;
     } catch (e, s) {
       printLog('Error setup mqtt $e $s');
+      return false;
     }
   }
 
   void mqttonDisconnected5773() {
-    printLog('Desconectado de mqtt');
-    setupMqtt5773();
+    printLog('Desconectado de mqtt mosquito');
+    reconnectMqtt5773();
+  }
+
+  void reconnectMqtt5773() async {
+    await setupMqtt5773().then((value) {
+      if (value) {
+        listenToTopics5773();
+      } else {
+        reconnectMqtt5773();
+      }
+    });
   }
 
   void sendMessagemqtt5773(String topic, String message) {
@@ -1136,6 +1171,17 @@ class RegbankTabState extends State<RegbankTab> {
   Widget build(BuildContext context) {
     return Scaffold(
         backgroundColor: const Color(0xff190019),
+        appBar: AppBar(
+        title: const Align(
+            alignment: Alignment.center,
+            child: Text(
+              'Regulación',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 18),
+            )),
+        backgroundColor: Colors.transparent,
+        foregroundColor: const Color(0xfffbe4d8),
+      ),
         body: SingleChildScrollView(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1496,6 +1542,17 @@ class Ota2TabState extends State<Ota2Tab> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xff190019),
+      appBar: AppBar(
+        title: const Align(
+            alignment: Alignment.center,
+            child: Text(
+              'OTA Global',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 18),
+            )),
+        backgroundColor: Colors.transparent,
+        foregroundColor: const Color(0xfffbe4d8),
+      ),
       body: Center(
           child: SingleChildScrollView(
         child: Column(
@@ -1701,8 +1758,8 @@ class LoadState extends State<LoadingPage> {
         nightMode = parts2[4] == '1';
         actualTemp = parts2[5];
         if (factoryMode) {
-          awsInit = parts2[5] == '1';
-          tempMap = parts2[6] == '1';
+          awsInit = parts2[6] == '1';
+          tempMap = parts2[7] == '1';
         }
         printLog('Estado: $turnOn');
       } else if (deviceType == '015773') {

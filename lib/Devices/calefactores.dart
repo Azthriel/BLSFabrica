@@ -102,7 +102,7 @@ class CalefactoresTabState extends State<CalefactoresTab> {
           useMaterial3: true,
         ),
         home: DefaultTabController(
-          length: 4,
+          length: factoryMode ? 4 : 3,
           child: PopScope(
             canPop: false,
             onPopInvoked: (didPop) {
@@ -136,15 +136,17 @@ class CalefactoresTabState extends State<CalefactoresTab> {
                 backgroundColor: const Color(0xFF522B5B),
                 foregroundColor: const Color(0xfffbe4d8),
                 title: Text(deviceName),
-                bottom: const TabBar(
-                  labelColor: Color(0xffdfb6b2),
-                  unselectedLabelColor: Color(0xff190019),
-                  indicatorColor: Color(0xffdfb6b2),
+                bottom: TabBar(
+                  labelColor: const Color(0xffdfb6b2),
+                  unselectedLabelColor: const Color(0xff190019),
+                  indicatorColor: const Color(0xffdfb6b2),
                   tabs: [
-                    Tab(icon: Icon(Icons.settings)),
-                    Tab(icon: Icon(Icons.thermostat)),
-                    Tab(icon: Icon(Icons.perm_identity)),
-                    Tab(icon: Icon(Icons.send)),
+                    const Tab(icon: Icon(Icons.settings)),
+                    const Tab(icon: Icon(Icons.thermostat)),
+                    if (factoryMode) ...[
+                      const Tab(icon: Icon(Icons.perm_identity))
+                    ],
+                    const Tab(icon: Icon(Icons.send)),
                   ],
                 ),
                 actions: <Widget>[
@@ -156,16 +158,16 @@ class CalefactoresTabState extends State<CalefactoresTab> {
                     ),
                     onPressed: () {
                       wifiText(context);
-                      },
+                    },
                   ),
                 ],
               ),
-              body: const TabBarView(
+              body: TabBarView(
                 children: [
-                  ToolsPage(),
-                  TempTab(),
-                  CredsTab(),
-                  OtaTab(),
+                  const ToolsPage(),
+                  const TempTab(),
+                  if (factoryMode) ...[const CredsTab()],
+                  const OtaTab(),
                 ],
               ),
             ),
@@ -336,7 +338,7 @@ class ToolsPageState extends State<ToolsPage> {
               const SizedBox(
                 height: 10,
               ),
-              if (deviceType == '027000') ...[
+              if (deviceType == '027000' && factoryMode) ...[
                 ElevatedButton(
                   onPressed: () {
                     showDialog(
@@ -348,12 +350,13 @@ class ToolsPageState extends State<ToolsPage> {
                             TextEditingController();
                         return AlertDialog(
                           title: const Center(
-                              child: Text(
-                            'Especificar parametros del ciclador:',
-                            style: TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.bold),
-                          )),
+                            child: Text(
+                              'Especificar parametros del ciclador:',
+                              style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
                           content: Column(
                             mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -469,9 +472,10 @@ class TempTabState extends State<TempTab> {
     final trueStatusSub =
         myDevice.varsUuid.onValueReceived.listen((List<int> status) {
       var parts = utf8.decode(status).split(':');
+      printLog(parts);
       setState(() {
         trueStatus = parts[0] == '1';
-        actualTemp = parts[5];
+        actualTemp = parts[1];
       });
     });
 
@@ -641,48 +645,50 @@ class TempTabState extends State<TempTab> {
                 ],
               ),
             ),
-            const SizedBox(height: 10),
-            Text.rich(
-              TextSpan(
-                children: [
-                  const TextSpan(
-                    text: '¿Mapeo de temperatura realizado? ',
-                    style: TextStyle(
-                      color: Color(0xfffbe4d8),
-                      fontSize: 20,
+            if (factoryMode) ...[
+              const SizedBox(height: 10),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    const TextSpan(
+                      text: '¿Mapeo de temperatura realizado? ',
+                      style: TextStyle(
+                        color: Color(0xfffbe4d8),
+                        fontSize: 20,
+                      ),
                     ),
-                  ),
-                  TextSpan(
-                    text: tempMap ? 'SI' : 'NO',
-                    style: TextStyle(
-                      color: tempMap
-                          ? const Color(0xff854f6c)
-                          : const Color(0xffFF0000),
-                      fontSize: 20,
+                    TextSpan(
+                      text: tempMap ? 'SI' : 'NO',
+                      style: TextStyle(
+                        color: tempMap
+                            ? const Color(0xff854f6c)
+                            : const Color(0xffFF0000),
+                        fontSize: 20,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                registerActivity(
-                    command(deviceType),
-                    extractSerialNumber(deviceName),
-                    'Se inicio el mapeo de temperatura en el equipo');
-                startTempMap();
-                showToast('Iniciando mapeo de temperatura');
-              },
-              style: ButtonStyle(
-                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                  RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18.0),
-                  ),
+                  ],
                 ),
               ),
-              child: const Text('Iniciar mapeo temperatura'),
-            ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  registerActivity(
+                      command(deviceType),
+                      extractSerialNumber(deviceName),
+                      'Se inicio el mapeo de temperatura en el equipo');
+                  startTempMap();
+                  showToast('Iniciando mapeo de temperatura');
+                },
+                style: ButtonStyle(
+                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18.0),
+                    ),
+                  ),
+                ),
+                child: const Text('Iniciar mapeo temperatura'),
+              ),
+            ],
           ],
         ),
       ),
@@ -870,7 +876,7 @@ class OtaTabState extends State<OtaTab> {
 
     if (factory) {
       url =
-          'https://github.com/barberop/sime-domotica/raw/main/${deviceType}_IOT/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';
+          'https://github.com/barberop/sime-domotica/raw/main/${deviceType}_IOT/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text}.bin';
     } else {
       url =
           'https://github.com/barberop/sime-domotica/raw/main/${deviceType}_IOT/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';
@@ -1038,7 +1044,8 @@ class OtaTabState extends State<OtaTab> {
         title: const Align(
             alignment: Alignment.center,
             child: Text(
-              'El dispositio debe estar conectado a internet\n                para poder realizar la OTA',
+              'El dispositio debe estar conectado a internet\npara poder realizar la OTA',
+              textAlign: TextAlign.center,
               style: TextStyle(fontSize: 18),
             )),
         backgroundColor: Colors.transparent,
