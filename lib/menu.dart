@@ -462,10 +462,12 @@ class ToolsAWS extends StatefulWidget {
 }
 
 class ToolsAWSState extends State<ToolsAWS> {
-  final TextEditingController productCodeController = TextEditingController();
   final TextEditingController serialNumberController = TextEditingController();
-  final TextEditingController cmdController = TextEditingController();
   final TextEditingController contentController = TextEditingController();
+  String productCode = '';
+  String command = '';
+  int key = 0;
+  List<String> content = [];
 
   String hintAWS(String cmd) {
     switch (cmd) {
@@ -478,11 +480,36 @@ class ToolsAWSState extends State<ToolsAWS> {
       case '5':
         return 'Nuevo owner (NA para borrar)';
       case '6':
-        return 'key#linea';
+        if (key == 0) {
+          return 'Amazon CA';
+        } else if (key == 1) {
+          return 'Device Cert.';
+        } else {
+          return 'Private Key';
+        }
       case '':
         return 'Aún no se agrega comando';
       default:
         return 'Este comando no existe...';
+    }
+  }
+
+  TextInputType contentType(String cmd) {
+    switch (cmd) {
+      case '0':
+        return TextInputType.number;
+      case '2':
+        return TextInputType.text;
+      case '4':
+        return TextInputType.number;
+      case '5':
+        return TextInputType.text;
+      case '6':
+        return TextInputType.multiline;
+      case '':
+        return TextInputType.none;
+      default:
+        return TextInputType.none;
     }
   }
 
@@ -492,16 +519,16 @@ class ToolsAWSState extends State<ToolsAWS> {
         resizeToAvoidBottomInset: false,
         backgroundColor: const Color(0xff190019),
         appBar: AppBar(
-        title: const Align(
-            alignment: Alignment.center,
-            child: Text(
-              'Customer service\nComandos a distancia',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18),
-            )),
-        backgroundColor: Colors.transparent,
-        foregroundColor: const Color(0xfffbe4d8),
-      ),
+          title: const Align(
+              alignment: Alignment.center,
+              child: Text(
+                'Customer service\nComandos a distancia',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 18),
+              )),
+          backgroundColor: Colors.transparent,
+          foregroundColor: const Color(0xfffbe4d8),
+        ),
         body: Consumer<GlobalDataNotifier>(
           builder: (context, notifier, child) {
             late List<String> parts;
@@ -517,29 +544,64 @@ class ToolsAWSState extends State<ToolsAWS> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     SizedBox(
-                      width: 300,
-                      child: TextField(
-                        style: const TextStyle(color: Color(0xfffbe4d8)),
-                        controller: productCodeController,
-                        keyboardType: TextInputType.text,
+                      width: 335,
+                      child: DropdownButtonFormField<String>(
                         decoration: const InputDecoration(
                           labelText: 'Ingrese el código de producto',
                           labelStyle: TextStyle(color: Color(0xfffbe4d8)),
                           hintStyle: TextStyle(color: Color(0xfffbe4d8)),
+                          // fillColor: Color(0xfffbe4d8),
                         ),
+                        dropdownColor: const Color(0xff190019),
+                        items: <String>[
+                          '022000_IOT',
+                          '027000_IOT',
+                          '020010_IOT',
+                          '041220_IOT',
+                          '015773_IOT'
+                        ].map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value,
+                                style: const TextStyle(
+                                  color: Color(0xfffbe4d8),
+                                )),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            productCode = value!;
+                          });
+                        },
                       ),
                     ),
                     const SizedBox(height: 20),
                     SizedBox(
-                      width: 300,
+                      width: 335,
                       child: TextField(
                         style: const TextStyle(color: Color(0xfffbe4d8)),
                         controller: serialNumberController,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Ingrese el número de serie',
-                          labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                          hintStyle: TextStyle(color: Color(0xfffbe4d8)),
+                          labelStyle: const TextStyle(color: Color(0xfffbe4d8)),
+                          hintStyle: const TextStyle(color: Color(0xfffbe4d8)),
+                          suffixIcon: IconButton(
+                            onPressed: () {
+                              String topic =
+                                  'tools/$productCode/${serialNumberController.text.trim()}';
+                              unSubToTopicMQTT(topic);
+                              setState(() {
+                                serialNumberController.clear();
+                                notifier.updateData(
+                                    'Esperando respuesta del esp...');
+                              });
+                            },
+                            icon: const Icon(
+                              Icons.delete_forever,
+                              color: Color(0xfffbe4d8),
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -548,16 +610,32 @@ class ToolsAWSState extends State<ToolsAWS> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         SizedBox(
-                          width: 80,
-                          child: TextField(
-                            style: const TextStyle(color: Color(0xfffbe4d8)),
-                            controller: cmdController,
-                            keyboardType: TextInputType.number,
+                          width: 115,
+                          child: DropdownButtonFormField<String>(
                             decoration: const InputDecoration(
                               labelText: 'Comando:',
                               labelStyle: TextStyle(color: Color(0xfffbe4d8)),
                               hintStyle: TextStyle(color: Color(0xfffbe4d8)),
+                              // fillColor: Color(0xfffbe4d8),
                             ),
+                            dropdownColor: const Color(0xff190019),
+                            items: <String>['0', '2', '4', '5', '6']
+                                .map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value,
+                                    style: const TextStyle(
+                                      color: Color(0xfffbe4d8),
+                                    )),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                command = value!;
+                                contentController.clear();
+                              });
+                              printLog(contentType(command));
+                            },
                           ),
                         ),
                         const SizedBox(width: 20),
@@ -566,15 +644,80 @@ class ToolsAWSState extends State<ToolsAWS> {
                           child: TextField(
                             style: const TextStyle(color: Color(0xfffbe4d8)),
                             controller: contentController,
-                            keyboardType: TextInputType.text,
+                            maxLines: null,
+                            keyboardType: contentType(command),
                             decoration: InputDecoration(
                               labelText: 'Contenido:',
-                              hintText: hintAWS(cmdController.text),
+                              hintText: hintAWS(command),
                               labelStyle:
                                   const TextStyle(color: Color(0xfffbe4d8)),
                               hintStyle:
                                   const TextStyle(color: Color(0xfffbe4d8)),
+                              suffixIcon: command == '6'
+                                  ? IconButton(
+                                      onPressed: () {
+                                        showDialog<void>(
+                                          context: context,
+                                          barrierDismissible: true,
+                                          builder: (BuildContext context) {
+                                            return SimpleDialog(
+                                              title: const Text(
+                                                  '¿Que vas a envíar?'),
+                                              children: <Widget>[
+                                                SimpleDialogOption(
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop();
+                                                    contentController.clear();
+                                                    key = 0;
+                                                    printLog(
+                                                        'Amazon CA seleccionada');
+                                                    setState(() {});
+                                                  },
+                                                  child:
+                                                      const Text('Amazon CA'),
+                                                ),
+                                                SimpleDialogOption(
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop();
+                                                    contentController.clear();
+                                                    key = 1;
+                                                    printLog(
+                                                        'Device Cert. seleccionada');
+                                                    setState(() {});
+                                                  },
+                                                  child: const Text(
+                                                      'Device Cert.'),
+                                                ),
+                                                SimpleDialogOption(
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop();
+                                                    contentController.clear();
+                                                    key = 2;
+                                                    printLog(
+                                                        'Private key seleccionada');
+                                                    setState(() {});
+                                                  },
+                                                  child:
+                                                      const Text('Private key'),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
+                                      },
+                                      icon: const Icon(
+                                        Icons.paste,
+                                        color: Color(0xfffbe4d8),
+                                      ),
+                                    )
+                                  : null,
                             ),
+                            onChanged: (value) {
+                              if (command == '6') {
+                                content = contentController.text.split('\n');
+                                contentController.text = 'Cargado';
+                              }
+                            },
                           ),
                         ),
                       ],
@@ -585,48 +728,54 @@ class ToolsAWSState extends State<ToolsAWS> {
                     ElevatedButton(
                         onPressed: () {
                           String topic =
-                              'tools/${productCodeController.text.trim()}/${serialNumberController.text.trim()}';
+                              'tools/$productCode/${serialNumberController.text.trim()}';
                           subToTopicMQTT(topic);
                           listenToTopics();
-                          String msg = jsonEncode({
-                            'cmd': cmdController.text.trim(),
-                            'content': contentController.text.trim()
-                          });
-                          registerActivity(
-                              productCodeController.text.trim(),
-                              serialNumberController.text.trim(),
-                              'Se envio via mqtt: $msg');
-                          sendMessagemqtt(topic, msg);
+                          if (command == '6') {
+                            for (var line in content) {
+                              String msg = jsonEncode(
+                                  {'cmd': command, 'content': '$key#$line'});
+                              printLog(msg);
+
+                              sendMessagemqtt(topic, msg);
+                            }
+                            String fun = key == 0
+                                ? 'Amazon CA'
+                                : key == 1
+                                    ? 'Device cert.'
+                                    : 'Private Key';
+                            registerActivity(
+                                productCode,
+                                serialNumberController.text.trim(),
+                                'Se envio via mqtt un $fun');
+                            contentController.clear();
+                          } else {
+                            String msg = jsonEncode({
+                              'cmd': command,
+                              'content': contentController.text.trim()
+                            });
+                            registerActivity(
+                                productCode,
+                                serialNumberController.text.trim(),
+                                'Se envio via mqtt: $msg');
+                            sendMessagemqtt(topic, msg);
+                            contentController.clear();
+                          }
                         },
                         child: const Text('Enviar comando')),
                     const SizedBox(
                       height: 10,
                     ),
                     ElevatedButton(
-                      onPressed: () {
-                        String topic =
-                            'tools/${productCodeController.text.trim()}/${serialNumberController.text.trim()}';
-                        unSubToTopicMQTT(topic);
-                        setState(() {
-                          productCodeController.clear();
-                          serialNumberController.clear();
-                          notifier.updateData('Esperando respuesta del esp...');
-                        });
-                      },
-                      child: const Text('Borrar equipo'),
-                    ),
-                    const SizedBox(
-                      height: 5,
-                    ),
-                    TextButton(
                         onPressed: () {
                           String topic =
-                              'tools/${productCodeController.text.trim()}/${serialNumberController.text.trim()}';
+                              'tools/$productCode/${serialNumberController.text.trim()}';
                           subToTopicMQTT(topic);
                           listenToTopics();
-                          String msg = jsonEncode({'alive': true});
+                          final data = {"alive": true};
+                          String msg = jsonEncode(data);
                           registerActivity(
-                              productCodeController.text.trim(),
+                              productCode,
                               serialNumberController.text.trim(),
                               'Se envio via mqtt: $msg');
                           sendMessagemqtt(topic, msg);
@@ -1172,16 +1321,16 @@ class RegbankTabState extends State<RegbankTab> {
     return Scaffold(
         backgroundColor: const Color(0xff190019),
         appBar: AppBar(
-        title: const Align(
-            alignment: Alignment.center,
-            child: Text(
-              'Regulación',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18),
-            )),
-        backgroundColor: Colors.transparent,
-        foregroundColor: const Color(0xfffbe4d8),
-      ),
+          title: const Align(
+              alignment: Alignment.center,
+              child: Text(
+                'Regulación',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 18),
+              )),
+          backgroundColor: Colors.transparent,
+          foregroundColor: const Color(0xfffbe4d8),
+        ),
         body: SingleChildScrollView(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1537,6 +1686,7 @@ class Ota2TabState extends State<Ota2Tab> {
   bool productCodeAdded = false;
   bool versionSoftAdded = false;
   bool versionHardAdded = false;
+  String productCode = '';
 
   @override
   Widget build(BuildContext context) {
@@ -1579,6 +1729,11 @@ class Ota2TabState extends State<Ota2Tab> {
                   ),
                   onChanged: (value) {
                     productCodeAdded = true;
+                    if (productCodeController.text.contains('_IOT')) {
+                      productCode = productCodeController.text.trim();
+                    } else {
+                      productCode = '${productCodeController.text.trim()}_IOT';
+                    }
                     setState(() {});
                   },
                 )),
@@ -1661,9 +1816,8 @@ class Ota2TabState extends State<Ota2Tab> {
                           TextButton(
                             onPressed: () {
                               registerActivity('Global', 'OTA',
-                                  'Se envio OTA global para los equipos ${productCodeController.text.trim()}. DATA: ${verHardController.text.trim()}#${verSoftController.text.trim()}');
-                              String topic =
-                                  'tools/${productCodeController.text.trim()}/global';
+                                  'Se envio OTA global para los equipos $productCode. DATA: ${verHardController.text.trim()}#${verSoftController.text.trim()}');
+                              String topic = 'tools/$productCode/global';
                               String msg = jsonEncode({
                                 'cmd': '2',
                                 'content':
@@ -1678,6 +1832,7 @@ class Ota2TabState extends State<Ota2Tab> {
                                 productCodeController.clear();
                                 verHardController.clear();
                                 verSoftController.clear();
+                                productCode = '';
                               });
                               showToast('Ota realizada');
                               Navigator.of(dialogContext).pop();

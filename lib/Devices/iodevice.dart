@@ -733,9 +733,15 @@ class OtaTabState extends State<OtaTab> {
   }
 
   void sendOTAWifi() async {
-    String url =
-        'https://github.com/barberop/sime-domotica/raw/main/${deviceType}_IOT/OTA_FW/$hardwareVersion#${otaSVController.text}.bin';
-    //https://github.com/barberop/sime-domotica/raw/main/027000_IOT/OTA_FW/240208A%23240223A.bin
+    String url = '';
+    if (otaSVController.text.contains('_F')) {
+      url =
+          'https://github.com/barberop/sime-domotica/raw/main/${deviceType}_IOT/OTA_FW/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
+    } else {
+      url =
+          'https://github.com/barberop/sime-domotica/raw/main/${deviceType}_IOT/OTA_FW/hv${hardwareVersion}sv${otaSVController.text.trim()}_F.bin';
+    }
+
     printLog(url);
     try {
       String data = '${command(deviceType)}[2]($url)';
@@ -824,8 +830,14 @@ class OtaTabState extends State<OtaTab> {
   void sendOTABLE() async {
     showToast("Enviando OTA...");
 
-    String url =
-        'https://github.com/barberop/sime-domotica/raw/main/${command(deviceType)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';
+    String url = '';
+    if (otaSVController.text.contains('_F')) {
+      url =
+          'https://github.com/barberop/sime-domotica/raw/main/${deviceType}_IOT/OTA_FW/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
+    } else {
+      url =
+          'https://github.com/barberop/sime-domotica/raw/main/${deviceType}_IOT/OTA_FW/hv${hardwareVersion}sv${otaSVController.text.trim()}_F.bin';
+    }
 
     printLog(url);
 

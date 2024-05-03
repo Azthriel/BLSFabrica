@@ -1477,16 +1477,21 @@ class OTAState extends State<OTAPage> {
     String url = '';
     if (value == 0) {
       //ota factory
-      url =
-          'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text}.bin';
+      if (otaSVController.text.contains('_F')) {
+        url =
+            'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
+      } else {
+        url =
+            'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}_F.bin';
+      }
     } else if (value == 1) {
       //ota work
       url =
-          'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';
+          'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
     } else if (value == 2) {
       //ota pic
       url =
-          'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text}.hex';
+          'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}.hex';
       otaPIC = true;
     }
 
@@ -1520,8 +1525,13 @@ class OTAState extends State<OTAPage> {
 
     String url = '';
     if (value == 0) {
-      url =
-          'https://github.com/barberop/sime-domotica/raw/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text}.bin';
+      if (otaSVController.text.contains('_F')) {
+        url =
+            'https://github.com/barberop/sime-domotica/raw/main/${deviceType}_IOT/OTA_FW/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
+      } else {
+        url =
+            'https://github.com/barberop/sime-domotica/raw/main/${deviceType}_IOT/OTA_FW/hv${hardwareVersion}sv${otaSVController.text.trim()}_F.bin';
+      }
     } else if (value == 1) {
       url =
           'https://github.com/barberop/sime-domotica/raw/main/${command(deviceType)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';

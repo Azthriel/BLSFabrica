@@ -610,7 +610,7 @@ class TempTabState extends State<TempTab> {
                   registerActivity(
                       command(deviceType),
                       extractSerialNumber(deviceName),
-                      'Se modifico el offset de temperatura del equipo a');
+                      'Se envío de temperatura ambiente: $value°C');
                   sendRoomTemperature(value);
                 },
               ),
@@ -875,11 +875,16 @@ class OtaTabState extends State<OtaTab> {
     String url = '';
 
     if (factory) {
-      url =
-          'https://github.com/barberop/sime-domotica/raw/main/${deviceType}_IOT/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text}.bin';
+      if (otaSVController.text.contains('_F')) {
+        url =
+            'https://github.com/barberop/sime-domotica/raw/main/${deviceType}_IOT/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
+      } else {
+        url =
+            'https://github.com/barberop/sime-domotica/raw/main/${deviceType}_IOT/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}_F.bin';
+      }
     } else {
       url =
-          'https://github.com/barberop/sime-domotica/raw/main/${deviceType}_IOT/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';
+          'https://github.com/barberop/sime-domotica/raw/main/${deviceType}_IOT/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
     }
 
     printLog(url);
@@ -974,8 +979,13 @@ class OtaTabState extends State<OtaTab> {
     String url = '';
 
     if (factory) {
-      url =
-          'https://github.com/barberop/sime-domotica/raw/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text}.bin';
+      if (otaSVController.text.contains('_F')) {
+        url =
+            'https://github.com/barberop/sime-domotica/raw/main/${deviceType}_IOT/OTA_FW/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
+      } else {
+        url =
+            'https://github.com/barberop/sime-domotica/raw/main/${deviceType}_IOT/OTA_FW/hv${hardwareVersion}sv${otaSVController.text.trim()}_F.bin';
+      }
     } else {
       url =
           'https://github.com/barberop/sime-domotica/raw/main/${command(deviceType)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';

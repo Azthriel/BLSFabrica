@@ -110,7 +110,7 @@ void listenToTopics() {
     try {
       final Map<String, dynamic> messageMap = json.decode(messageString);
 
-      deviceResponseMqtt = messageMap['esp_res'];
+      deviceResponseMqtt = messageMap['esp_res'] ?? 'No hubo respuesta';
       GlobalDataNotifier notifier = Provider.of<GlobalDataNotifier>(
           navigatorKey.currentContext!,
           listen: false);
