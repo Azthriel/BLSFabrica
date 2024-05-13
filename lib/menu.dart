@@ -344,6 +344,9 @@ class ControlTabState extends State<ControlTab> {
       printLog('Si llego');
       comController.clear();
       isRegister = false;
+      showToast('Equipo cargado');
+      snController.clear();
+      pcController.clear();
       setState(() {});
     } else {
       printLog('Unu');
@@ -383,7 +386,7 @@ class ControlTabState extends State<ControlTab> {
                     hintStyle: TextStyle(color: Color(0xfffbe4d8)),
                   ),
                   onChanged: (value) {
-                    productCode = value;
+                    productCode = '${value}_IOT';
                   },
                 )),
             const SizedBox(height: 20),
@@ -433,18 +436,16 @@ class ControlTabState extends State<ControlTab> {
                   ),
                 )),
             const SizedBox(height: 20),
-            ElevatedButton(
-                onPressed: () {
-                  String accion =
-                      'Se marco el equipo como ${stateSell ? 'listo para la venta' : 'no listo para la venta'}';
-                  registerActivity(productCode, serialNumber, accion);
-                  updateGoogleSheet();
-                },
-                child: const Text('Subir')),
-            const SizedBox(height: 10),
-            if (isRegister) ...{
-              const CircularProgressIndicator(),
-            }
+            isRegister
+                ? const CircularProgressIndicator()
+                : ElevatedButton(
+                    onPressed: () {
+                      String accion =
+                          'Se marco el equipo como ${stateSell ? 'listo para la venta' : 'no listo para la venta'}';
+                      registerActivity(productCode, serialNumber, accion);
+                      updateGoogleSheet();
+                    },
+                    child: const Text('Subir')),
           ],
         ),
       ),
@@ -472,7 +473,7 @@ class ToolsAWSState extends State<ToolsAWS> {
   String hintAWS(String cmd) {
     switch (cmd) {
       case '0':
-        return '0 para borrar nvs, 1 para mantener';
+        return '1 borrar NVS, 0 Conservar';
       case '2':
         return 'HardVer#SoftVer';
       case '4':
@@ -531,13 +532,9 @@ class ToolsAWSState extends State<ToolsAWS> {
         ),
         body: Consumer<GlobalDataNotifier>(
           builder: (context, notifier, child) {
-            late List<String> parts;
             String textToShow = notifier.getData();
             printLog(textToShow);
-            bool alive = textToShow.contains(':');
-            if (alive) {
-              parts = textToShow.split(':');
-            }
+
             return Center(
               child: SingleChildScrollView(
                 child: Column(
@@ -768,6 +765,7 @@ class ToolsAWSState extends State<ToolsAWS> {
                     ),
                     ElevatedButton(
                         onPressed: () {
+                          alive = true;
                           String topic =
                               'tools/$productCode/${serialNumberController.text.trim()}';
                           subToTopicMQTT(topic);
@@ -811,21 +809,12 @@ class ToolsAWSState extends State<ToolsAWS> {
                           const SizedBox(
                             height: 20,
                           ),
-                          if (alive) ...[
-                            Text(
-                              'SoftVer: ${parts[2]}\nHardVer: ${parts[3]}\nOwner: ${parts[4]}',
-                              style: const TextStyle(
-                                  color: Color(0xFFdfb6b2), fontSize: 30),
-                              textAlign: TextAlign.start,
-                            ),
-                          ] else ...[
-                            Text(
-                              textToShow,
-                              style: const TextStyle(
-                                  color: Color(0xFFdfb6b2), fontSize: 30),
-                              textAlign: TextAlign.center,
-                            ),
-                          ]
+                          Text(
+                            textToShow,
+                            style: const TextStyle(
+                                color: Color(0xFFdfb6b2), fontSize: 30),
+                            textAlign: TextAlign.center,
+                          ),
                         ],
                       ),
                     )
@@ -1919,13 +1908,14 @@ class LoadState extends State<LoadingPage> {
         printLog('Estado: $turnOn');
       } else if (deviceType == '015773') {
         //Si soy un detector
-
+        workValues = await myDevice.workUuid.read();
         if (factoryMode) {
           calibrationValues = await myDevice.calibrationUuid.read();
           regulationValues = await myDevice.regulationUuid.read();
           debugValues = await myDevice.debugUuid.read();
+          awsInit = workValues[23] == 1;
         }
-        workValues = await myDevice.workUuid.read();
+
         printLog('Valores calibracion: $calibrationValues');
         printLog('Valores regulacion: $regulationValues');
         printLog('Valores debug: $debugValues');

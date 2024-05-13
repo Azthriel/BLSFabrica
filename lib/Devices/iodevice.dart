@@ -137,6 +137,7 @@ class IODevicesTabState extends State<IODevicesTab> {
               return; // Retorna según la lógica de tu app
             },
             child: Scaffold(
+              resizeToAvoidBottomInset: false,
               appBar: AppBar(
                 backgroundColor: const Color(0xFF522B5B),
                 foregroundColor: const Color(0xfffbe4d8),
@@ -608,6 +609,29 @@ class CredsTabState extends State<CredsTab> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Text.rich(
+              //   TextSpan(
+              //     children: [
+              //       const TextSpan(
+              //         text: '¿El equipo tiene una Thing cargada? ',
+              //         style: TextStyle(
+              //           color: Color(0xfffbe4d8),
+              //           fontSize: 20,
+              //         ),
+              //       ),
+              //       TextSpan(
+              //         text: awsInit ? 'SI' : 'NO',
+              //         style: TextStyle(
+              //           color: awsInit
+              //               ? const Color(0xff854f6c)
+              //               : const Color(0xffFF0000),
+              //           fontSize: 20,
+              //         ),
+              //       ),
+              //     ],
+              //   ),
+              // ),
+              // const SizedBox(height: 30),
               SizedBox(
                 width: 300,
                 child: TextField(
@@ -615,12 +639,20 @@ class CredsTabState extends State<CredsTab> {
                   keyboardType: TextInputType.multiline,
                   maxLines: null,
                   style: const TextStyle(color: Color(0xfffbe4d8)),
-                  decoration: const InputDecoration(
-                    label: Text('Ingresa Amazon CA cert'),
-                    labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                    hintStyle: TextStyle(color: Color(0xfffbe4d8)),
+                  decoration: InputDecoration(
+                    label: const Text('Ingresa Amazon CA cert'),
+                    labelStyle: const TextStyle(color: Color(0xfffbe4d8)),
+                    hintStyle: const TextStyle(color: Color(0xfffbe4d8)),
+                    suffixIcon: IconButton(
+                        onPressed: () {
+                          amazonCAController.clear();
+                        },
+                        icon: const Icon(Icons.delete)),
                   ),
-                  onChanged: (value) => amazonCA = amazonCAController.text,
+                  onChanged: (value) {
+                    amazonCA = amazonCAController.text;
+                    amazonCAController.text = 'Cargado';
+                  },
                 ),
               ),
               const SizedBox(
@@ -633,12 +665,20 @@ class CredsTabState extends State<CredsTab> {
                   keyboardType: TextInputType.multiline,
                   maxLines: null,
                   style: const TextStyle(color: Color(0xfffbe4d8)),
-                  decoration: const InputDecoration(
-                    label: Text('Ingresa la private Key'),
-                    labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                    hintStyle: TextStyle(color: Color(0xfffbe4d8)),
+                  decoration: InputDecoration(
+                    label: const Text('Ingresa la private Key'),
+                    labelStyle: const TextStyle(color: Color(0xfffbe4d8)),
+                    hintStyle: const TextStyle(color: Color(0xfffbe4d8)),
+                    suffixIcon: IconButton(
+                        onPressed: () {
+                          privateKeyController.clear();
+                        },
+                        icon: const Icon(Icons.delete)),
                   ),
-                  onChanged: (value) => privateKey = privateKeyController.text,
+                  onChanged: (value) {
+                    privateKey = privateKeyController.text;
+                    privateKeyController.text = 'Cargado';
+                  },
                 ),
               ),
               const SizedBox(
@@ -651,12 +691,20 @@ class CredsTabState extends State<CredsTab> {
                   keyboardType: TextInputType.multiline,
                   maxLines: null,
                   style: const TextStyle(color: Color(0xfffbe4d8)),
-                  decoration: const InputDecoration(
-                    label: Text('Ingresa device Cert'),
-                    labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                    hintStyle: TextStyle(color: Color(0xfffbe4d8)),
+                  decoration: InputDecoration(
+                    label: const Text('Ingresa device Cert'),
+                    labelStyle: const TextStyle(color: Color(0xfffbe4d8)),
+                    hintStyle: const TextStyle(color: Color(0xfffbe4d8)),
+                    suffixIcon: IconButton(
+                        onPressed: () {
+                          deviceCertController.clear();
+                        },
+                        icon: const Icon(Icons.delete)),
                   ),
-                  onChanged: (value) => deviceCert = deviceCertController.text,
+                  onChanged: (value) {
+                    deviceCert = deviceCertController.text;
+                    deviceCertController.text = 'Cargado';
+                  },
                 ),
               ),
               const SizedBox(

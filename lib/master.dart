@@ -64,6 +64,7 @@ bool alreadySubOta = false;
 bool alreadySubDebug = false;
 bool alreadySubWork = false;
 bool alreadySubIO = false;
+bool alive = false;
 
 String deviceResponseMqtt = '';
 
@@ -76,7 +77,7 @@ const bool xDebugMode = !xProfileMode && !xReleaseMode;
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
-String appVersionNumber = '24050300';
+String appVersionNumber = '24051300';
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
