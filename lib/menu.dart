@@ -479,7 +479,7 @@ class ToolsAWSState extends State<ToolsAWS> {
       case '4':
         return 'Nuevo SN';
       case '5':
-        return 'Nuevo owner (NA para borrar)';
+        return '0 desactivar CPD';
       case '6':
         if (key == 0) {
           return 'Amazon CA';
@@ -765,7 +765,6 @@ class ToolsAWSState extends State<ToolsAWS> {
                     ),
                     ElevatedButton(
                         onPressed: () {
-                          alive = true;
                           String topic =
                               'tools/$productCode/${serialNumberController.text.trim()}';
                           subToTopicMQTT(topic);
@@ -1896,14 +1895,14 @@ class LoadState extends State<LoadingPage> {
         varsValues = await myDevice.varsUuid.read();
         var parts2 = utf8.decode(varsValues).split(':');
         printLog('$parts2');
-        tempValue = double.parse(parts2[0]);
-        turnOn = parts2[1] == '1';
-        trueStatus = parts2[3] == '1';
-        nightMode = parts2[4] == '1';
-        actualTemp = parts2[5];
+        tempValue = double.parse(parts2[1]);
+        turnOn = parts2[2] == '1';
+        trueStatus = parts2[4] == '1';
+        nightMode = parts2[5] == '1';
+        actualTemp = parts2[6];
         if (factoryMode) {
-          awsInit = parts2[6] == '1';
-          tempMap = parts2[7] == '1';
+          awsInit = parts2[7] == '1';
+          tempMap = parts2[8] == '1';
         }
         printLog('Estado: $turnOn');
       } else if (deviceType == '015773') {

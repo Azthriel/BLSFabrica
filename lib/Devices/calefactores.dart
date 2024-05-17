@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
-
 import 'package:biocaldensmartlifefabrica/master.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -339,106 +338,104 @@ class ToolsPageState extends State<ToolsPage> {
               const SizedBox(
                 height: 10,
               ),
-              if (deviceType == '027000' && factoryMode) ...[
-                ElevatedButton(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        final TextEditingController cicleController =
-                            TextEditingController();
-                        final TextEditingController timeController =
-                            TextEditingController();
-                        return AlertDialog(
-                          title: const Center(
-                            child: Text(
-                              'Especificar parametros del ciclador:',
-                              style: TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold),
-                            ),
+              ElevatedButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      final TextEditingController cicleController =
+                          TextEditingController();
+                      final TextEditingController timeController =
+                          TextEditingController();
+                      return AlertDialog(
+                        title: const Center(
+                          child: Text(
+                            'Especificar parametros del ciclador:',
+                            style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold),
                           ),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                width: 300,
-                                child: TextField(
-                                  style: const TextStyle(color: Colors.black),
-                                  controller: cicleController,
-                                  keyboardType: TextInputType.number,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Ingrese cantidad de ciclos',
-                                    hintText: 'Certificación: 1000',
-                                    labelStyle: TextStyle(color: Colors.black),
-                                    hintStyle: TextStyle(color: Colors.black),
+                        ),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 300,
+                              child: TextField(
+                                style: const TextStyle(color: Colors.black),
+                                controller: cicleController,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  labelText: 'Ingrese cantidad de ciclos',
+                                  hintText: 'Certificación: 1000',
+                                  labelStyle: TextStyle(color: Colors.black),
+                                  hintStyle: TextStyle(color: Colors.black),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 20,
+                            ),
+                            SizedBox(
+                              width: 300,
+                              child: TextField(
+                                style: const TextStyle(color: Colors.black),
+                                controller: timeController,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  labelText: 'Ingrese duración de los ciclos',
+                                  hintText: 'Recomendado: 1000',
+                                  suffixText: '(mS)',
+                                  suffixStyle: TextStyle(
+                                    color: Colors.black,
+                                  ),
+                                  labelStyle: TextStyle(
+                                    color: Colors.black,
+                                  ),
+                                  hintStyle: TextStyle(
+                                    color: Colors.black,
                                   ),
                                 ),
                               ),
-                              const SizedBox(
-                                height: 20,
-                              ),
-                              SizedBox(
-                                width: 300,
-                                child: TextField(
-                                  style: const TextStyle(color: Colors.black),
-                                  controller: timeController,
-                                  keyboardType: TextInputType.number,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Ingrese duración de los ciclos',
-                                    hintText: 'Recomendado: 1000',
-                                    suffixText: '(mS)',
-                                    suffixStyle: TextStyle(
-                                      color: Colors.black,
-                                    ),
-                                    labelStyle: TextStyle(
-                                      color: Colors.black,
-                                    ),
-                                    hintStyle: TextStyle(
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                navigatorKey.currentState!.pop();
-                              },
-                              child: const Text('Cancelar'),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                registerActivity(
-                                    command(deviceType),
-                                    serialNumber,
-                                    'Se mando el ciclado de la válvula de este equipo');
-                                int cicle = int.parse(cicleController.text) * 2;
-                                String data =
-                                    '027000_IOT[13](${timeController.text}#$cicle)';
-                                myDevice.toolsUuid.write(data.codeUnits);
-                                navigatorKey.currentState!.pop();
-                              },
-                              child: const Text('Iniciar proceso'),
                             ),
                           ],
-                        );
-                      },
-                    );
-                  },
-                  style: ButtonStyle(
-                    shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                      RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18.0),
-                      ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              navigatorKey.currentState!.pop();
+                            },
+                            child: const Text('Cancelar'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              registerActivity(
+                                  command(deviceType),
+                                  serialNumber,
+                                  'Se mando el ciclado de la válvula de este equipo');
+                              int cicle = int.parse(cicleController.text) * 2;
+                              String data =
+                                  '${command(deviceType)}[13](${timeController.text}#$cicle)';
+                              myDevice.toolsUuid.write(data.codeUnits);
+                              navigatorKey.currentState!.pop();
+                            },
+                            child: const Text('Iniciar proceso'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+                style: ButtonStyle(
+                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18.0),
                     ),
                   ),
-                  child: const Text('Configurar ciclado'),
                 ),
-              ],
+                child: const Text('Configurar ciclado'),
+              ),
             ],
           ),
         ),

@@ -114,7 +114,7 @@ void listenToTopics() {
         if (messageMap['esp_res'].toString().contains(':')) {
           List<String> parts = messageMap['esp_res'].toString().split(':');
           deviceResponseMqtt =
-              'SoftVer: ${parts[2]}\nHardVer: ${parts[3]}\nOwner: ${parts[4]}';
+              'SoftVer: ${parts[2]}\nHardVer: ${parts[3]}';
         } else {
           deviceResponseMqtt = messageMap['esp_res'].toString();
         }
