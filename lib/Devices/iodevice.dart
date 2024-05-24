@@ -68,7 +68,9 @@ class IODevicesTabState extends State<IODevicesTab> {
           errorMessage = parts[1];
         }
 
-        errorSintax = getWifiErrorSintax(int.parse(parts[1]));
+        if (int.tryParse(parts[1]) != null) {
+          errorSintax = getWifiErrorSintax(int.parse(parts[1]));
+        }
       }
     }
 

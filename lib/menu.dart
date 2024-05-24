@@ -120,7 +120,7 @@ class ScanTabState extends State<ScanTab> {
               'Detector',
               'Radiador',
               'Módulo',
-              'RB'
+              'Roll',
             ],
             timeout: const Duration(seconds: 30),
             androidUsesFineLocation: true,
@@ -1873,6 +1873,8 @@ class LoadState extends State<LoadingPage> {
           navigatorKey.currentState?.pushReplacementNamed('/detector');
         } else if (deviceType == '020010') {
           navigatorKey.currentState?.pushReplacementNamed('/io');
+        }else if (deviceType == '024011'){
+          navigatorKey.currentState?.pushReplacementNamed('/roller');
         }
       } else {
         showToast('Error en el dispositivo, intente nuevamente');
@@ -1886,15 +1888,16 @@ class LoadState extends State<LoadingPage> {
       printLog('Estoy precargando');
       await myDevice.device.requestMtu(255);
       toolsValues = await myDevice.toolsUuid.read();
-      printLog('Valores tools: $toolsValues');
-      printLog('Valores info: $infoValues');
+      printLog('Valores tools: $toolsValues || ${utf8.decode(toolsValues)}');
+      printLog('Valores info: $infoValues || ${utf8.decode(infoValues)}');
       //Si es un calefactor
       if (deviceType == '022000' ||
           deviceType == '027000' ||
           deviceType == '041220') {
         varsValues = await myDevice.varsUuid.read();
         var parts2 = utf8.decode(varsValues).split(':');
-        printLog('$parts2');
+        printLog('Valores vars: $parts2');
+        distanceControlActive = parts2[0] == '1';
         tempValue = double.parse(parts2[1]);
         turnOn = parts2[2] == '1';
         trueStatus = parts2[4] == '1';
@@ -1922,7 +1925,20 @@ class LoadState extends State<LoadingPage> {
         printLog('Valores work: $workValues');
       } else if (deviceType == '020010') {
         ioValues = await myDevice.ioUuid.read();
-        printLog('Valores IO: $ioValues // ${utf8.decode(ioValues)}');
+        printLog('Valores IO: $ioValues || ${utf8.decode(ioValues)}');
+      } else if (deviceType == '024011') {
+        varsValues = await myDevice.varsUuid.read();
+        var parts2 = utf8.decode(varsValues).split(':');
+        printLog('Valores vars: $parts2');
+
+        distanceControlActive = parts2[0] == '1';
+        rollerlength = parts2[1];
+        rollerPolarity = parts2[2];
+        motorSpeed = parts2[3];
+        actualPosition = int.parse(parts2[4]);
+        workingPosition = int.parse(parts2[5]);
+        rollerMoving = parts2[6] == '1';
+        awsInit = parts2[7] == '1';
       }
 
       return Future.value(true);

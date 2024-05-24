@@ -2,18 +2,18 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
+import 'package:http/http.dart' as http;
 import 'package:biocaldensmartlifefabrica/master.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:http/http.dart' as http;
 
-class CalefactoresTab extends StatefulWidget {
-  const CalefactoresTab({super.key});
+class RollerTab extends StatefulWidget {
+  const RollerTab({super.key});
   @override
-  CalefactoresTabState createState() => CalefactoresTabState();
+  RollerTabState createState() => RollerTabState();
 }
 
-class CalefactoresTabState extends State<CalefactoresTab> {
+class RollerTabState extends State<RollerTab> {
   @override
   initState() {
     super.initState();
@@ -144,7 +144,9 @@ class CalefactoresTabState extends State<CalefactoresTab> {
                   indicatorColor: const Color(0xffdfb6b2),
                   tabs: [
                     const Tab(icon: Icon(Icons.settings)),
-                    const Tab(icon: Icon(Icons.thermostat)),
+                    const Tab(
+                      icon: Icon(Icons.rotate_left_outlined),
+                    ),
                     if (factoryMode) ...[
                       const Tab(icon: Icon(Icons.perm_identity))
                     ],
@@ -167,7 +169,7 @@ class CalefactoresTabState extends State<CalefactoresTab> {
               body: TabBarView(
                 children: [
                   const ToolsPage(),
-                  const TempTab(),
+                  const RollcontrolTab(),
                   if (factoryMode) ...[const CredsTab()],
                   const OtaTab(),
                 ],
@@ -263,11 +265,12 @@ class ToolsPageState extends State<ToolsPage> {
                       fontWeight: FontWeight.bold))),
               Text.rich(
                 TextSpan(
-                    text: distanceControlActive ? 'Activado' : 'Desactivado',
-                    style: (const TextStyle(
-                        fontSize: 20.0,
-                        color: Color(0xFFdfb6b2),
-                        fontWeight: FontWeight.normal))),
+                  text: distanceControlActive ? 'Activado' : 'Desactivado',
+                  style: (const TextStyle(
+                      fontSize: 20.0,
+                      color: Color(0xFFdfb6b2),
+                      fontWeight: FontWeight.bold)),
+                ),
               ),
               const SizedBox(
                 height: 10,
@@ -313,12 +316,11 @@ class ToolsPageState extends State<ToolsPage> {
               ),
               Text.rich(
                 TextSpan(
-                  text: hardwareVersion,
-                  style: (const TextStyle(
-                      fontSize: 20.0,
-                      color: Color(0xFFdfb6b2),
-                      fontWeight: FontWeight.bold)),
-                ),
+                    text: hardwareVersion,
+                    style: (const TextStyle(
+                        fontSize: 20.0,
+                        color: Color(0xFFdfb6b2),
+                        fontWeight: FontWeight.bold))),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
@@ -341,24 +343,11 @@ class ToolsPageState extends State<ToolsPage> {
                 height: 10,
               ),
               ElevatedButton(
-                  onPressed: () {
-                    registerActivity(command(deviceType), serialNumber,
-                        'Se mando el ciclado de la válvula de este equipo');
-                    String data = '${command(deviceType)}[13](1000#5)';
-                    myDevice.toolsUuid.write(data.codeUnits);
-                  },
-                  child: const Text('Ciclado fijo')),
-              const SizedBox(
-                height: 10,
-              ),
-              ElevatedButton(
                 onPressed: () {
                   showDialog(
                     context: context,
                     builder: (BuildContext context) {
                       final TextEditingController cicleController =
-                          TextEditingController();
-                      final TextEditingController timeController =
                           TextEditingController();
                       return AlertDialog(
                         title: const Center(
@@ -380,38 +369,12 @@ class ToolsPageState extends State<ToolsPage> {
                                 controller: cicleController,
                                 keyboardType: TextInputType.number,
                                 decoration: const InputDecoration(
-                                  labelText: 'Ingrese cantidad de ciclos',
-                                  hintText: 'Certificación: 1000',
+                                  labelText: 'Ingrese cantidad de iteraciones',
                                   labelStyle: TextStyle(color: Colors.black),
                                   hintStyle: TextStyle(color: Colors.black),
                                 ),
                               ),
-                            ),
-                            const SizedBox(
-                              height: 20,
-                            ),
-                            SizedBox(
-                              width: 300,
-                              child: TextField(
-                                style: const TextStyle(color: Colors.black),
-                                controller: timeController,
-                                keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(
-                                  labelText: 'Ingrese duración de los ciclos',
-                                  hintText: 'Recomendado: 1000',
-                                  suffixText: '(mS)',
-                                  suffixStyle: TextStyle(
-                                    color: Colors.black,
-                                  ),
-                                  labelStyle: TextStyle(
-                                    color: Colors.black,
-                                  ),
-                                  hintStyle: TextStyle(
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              ),
-                            ),
+                            )
                           ],
                         ),
                         actions: [
@@ -426,10 +389,9 @@ class ToolsPageState extends State<ToolsPage> {
                               registerActivity(
                                   command(deviceType),
                                   serialNumber,
-                                  'Se mando el ciclado de la válvula de este equipo');
-                              int cicle = int.parse(cicleController.text) * 2;
+                                  'Se mando el ciclado de este equipo');
                               String data =
-                                  '${command(deviceType)}[13](${timeController.text}#$cicle)';
+                                  '${command(deviceType)}[13](${int.parse(cicleController.text)})';
                               myDevice.toolsUuid.write(data.codeUnits);
                               navigatorKey.currentState!.pop();
                             },
@@ -457,60 +419,59 @@ class ToolsPageState extends State<ToolsPage> {
   }
 }
 
-//CONTROL TAB // On Off y set temperatura
+//CONTROL TAB //Control aspects of the roller
 
-class TempTab extends StatefulWidget {
-  const TempTab({super.key});
+class RollcontrolTab extends StatefulWidget {
+  const RollcontrolTab({super.key});
   @override
-  TempTabState createState() => TempTabState();
+  State<RollcontrolTab> createState() => RollcontrolTabState();
 }
 
-class TempTabState extends State<TempTab> {
-  final TextEditingController roomTempController = TextEditingController();
+class RollcontrolTabState extends State<RollcontrolTab> {
+  TextEditingController rLargeController = TextEditingController();
+  TextEditingController workController = TextEditingController();
+  TextEditingController motorSpeedController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    printLog('Valor temp: $tempValue');
-    printLog('¿Encendido? $turnOn');
-    subscribeTrueStatus();
+    subToVars();
   }
 
-  void subscribeTrueStatus() async {
+  void subToVars() async {
     printLog('Me subscribo a vars');
     await myDevice.varsUuid.setNotifyValue(true);
 
-    final trueStatusSub =
+    final varsSub =
         myDevice.varsUuid.onValueReceived.listen((List<int> status) {
       var parts = utf8.decode(status).split(':');
       printLog(parts);
       setState(() {
-        trueStatus = parts[0] == '1';
-        actualTemp = parts[1];
+        actualPosition = int.parse(parts[0]);
+        rollerMoving = parts[1] == '1';
       });
     });
 
-    myDevice.device.cancelWhenDisconnected(trueStatusSub);
+    myDevice.device.cancelWhenDisconnected(varsSub);
   }
 
-  void sendTemperature(int temp) {
-    String data = '${command(deviceType)}[7]($temp)';
+  void setRange(int mm) {
+    String data = '024011_IOT[7]($mm)';
     myDevice.toolsUuid.write(data.codeUnits);
   }
 
-  void turnDeviceOn(bool on) {
-    int fun = on ? 1 : 0;
-    String data = '${command(deviceType)}[11]($fun)';
+  void setDistance(int pc) {
+    String data = '024011_IOT[7]($pc%)';
     myDevice.toolsUuid.write(data.codeUnits);
   }
 
-  void sendRoomTemperature(String temp) {
-    String data = '${command(deviceType)}[8]($temp)';
+  void setMotorSpeed(int speed) {
+    String data = '024011_IOT[9]($speed)';
     myDevice.toolsUuid.write(data.codeUnits);
   }
 
-  void startTempMap() {
-    String data = '${command(deviceType)}[12](0)';
+  void setRollerConfig(int type) {
+    String data = '024011_IOT[8]($type)';
     myDevice.toolsUuid.write(data.codeUnits);
   }
 
@@ -519,188 +480,441 @@ class TempTabState extends State<TempTab> {
     return Scaffold(
       backgroundColor: const Color(0xff190019),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text.rich(
-              TextSpan(
-                text: turnOn
-                    ? trueStatus
-                        ? 'Calentando'
-                        : 'Encendido'
-                    : 'Apagado',
-                style: TextStyle(
-                    color: turnOn
-                        ? trueStatus
-                            ? Colors.amber[600]
-                            : Colors.green
-                        : Colors.red,
-                    fontSize: 30),
-              ),
-            ),
-            const SizedBox(height: 30),
-            Transform.scale(
-              scale: 3.0,
-              child: Switch(
-                activeColor: const Color(0xfffbe4d8),
-                activeTrackColor: const Color(0xff854f6c),
-                inactiveThumbColor: const Color(0xff854f6c),
-                inactiveTrackColor: const Color(0xfffbe4d8),
-                value: turnOn,
-                onChanged: (value) {
-                  turnDeviceOn(value);
-                  setState(() {
-                    turnOn = value;
-                  });
-                },
-              ),
-            ),
-            const SizedBox(height: 50),
-            Text.rich(
-              TextSpan(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Column(
                 children: [
-                  const TextSpan(
-                    text: 'Temperatura de corte: ',
+                  const Text(
+                    'Posición deseada:',
                     style: TextStyle(
-                      color: Color(0xfffbe4d8),
-                      fontSize: 25,
-                    ),
-                  ),
-                  TextSpan(
-                    text: tempValue.round().toString(),
-                    style: const TextStyle(
-                      fontSize: 30,
-                      color: Color(0xfffbe4d8),
-                    ),
-                  ),
-                  const TextSpan(
-                    text: '°C',
-                    style: TextStyle(
-                      fontSize: 30,
-                      color: Color(0xfffbe4d8),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                trackHeight: 50.0,
-                thumbColor: const Color(0xfffbe4d8),
-                thumbShape: const RoundSliderThumbShape(
-                  enabledThumbRadius: 0.0,
-                ),
-              ),
-              child: Slider(
-                value: tempValue,
-                onChanged: (value) {
-                  setState(() {
-                    tempValue = value;
-                  });
-                },
-                onChangeEnd: (value) {
-                  printLog(value);
-                  sendTemperature(value.round());
-                },
-                min: 10,
-                max: 40,
-              ),
-            ),
-            const SizedBox(height: 50),
-            SizedBox(
-              width: 300,
-              child: TextField(
-                style: const TextStyle(color: Color(0xfffbe4d8)),
-                keyboardType: TextInputType.number,
-                controller: roomTempController,
-                decoration: const InputDecoration(
-                  labelText: 'Introducir temperatura de la habitación',
-                  labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                ),
-                onSubmitted: (value) {
-                  registerActivity(
-                      command(deviceType),
-                      extractSerialNumber(deviceName),
-                      'Se envío de temperatura ambiente: $value°C');
-                  sendRoomTemperature(value);
-                },
-              ),
-            ),
-            const SizedBox(height: 30),
-            Text.rich(
-              TextSpan(
-                children: [
-                  const TextSpan(
-                    text: 'Temperatura actual: ',
-                    style: TextStyle(
-                      color: Color(0xfffbe4d8),
-                      fontSize: 20,
-                    ),
-                  ),
-                  TextSpan(
-                    text: actualTemp,
-                    style: const TextStyle(
-                      color: Color(0xFFdfb6b2),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 30,
-                    ),
-                  ),
-                  const TextSpan(
-                    text: '°C ',
-                    style: TextStyle(
-                      color: Color(0xFFdfb6b2),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 30,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (factoryMode) ...[
-              const SizedBox(height: 10),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    const TextSpan(
-                      text: '¿Mapeo de temperatura realizado? ',
-                      style: TextStyle(
+                        fontSize: 30.0,
                         color: Color(0xfffbe4d8),
-                        fontSize: 20,
-                      ),
-                    ),
-                    TextSpan(
-                      text: tempMap ? 'SI' : 'NO',
-                      style: TextStyle(
-                        color: tempMap
-                            ? const Color(0xff854f6c)
-                            : const Color(0xffFF0000),
-                        fontSize: 20,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  registerActivity(
-                      command(deviceType),
-                      extractSerialNumber(deviceName),
-                      'Se inicio el mapeo de temperatura en el equipo');
-                  startTempMap();
-                  showToast('Iniciando mapeo de temperatura');
-                },
-                style: ButtonStyle(
-                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18.0),
+                        fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(
+                    width: 150,
+                    child: TextField(
+                      controller: workController,
+                      style: const TextStyle(color: Color(0xFFdfb6b2)),
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                          labelText: 'Modificar:',
+                          labelStyle: TextStyle(
+                              color: Color(0xFFdfb6b2),
+                              fontWeight: FontWeight.bold)),
+                      onSubmitted: (value) {
+                        workingPosition = int.parse(value);
+                        setDistance(int.parse(value));
+                        workController.clear();
+                      },
                     ),
                   ),
-                ),
-                child: const Text('Iniciar mapeo temperatura'),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                        trackHeight: 50.0,
+                        thumbColor: const Color(0xfffbe4d8),
+                        thumbShape: IconThumbSlider(
+                            iconData: workingPosition - 1 <= actualPosition &&
+                                    workingPosition + 1 >= actualPosition
+                                ? Icons.check
+                                : workingPosition < actualPosition
+                                    ? Icons.arrow_back
+                                    : Icons.arrow_forward,
+                            thumbRadius: 25)),
+                    child: Slider(
+                      value: actualPosition.toDouble(),
+                      secondaryTrackValue: workingPosition.toDouble(),
+                      onChanged: (_) {},
+                      min: 0,
+                      max: 100,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        const SizedBox(
+                          width: 20,
+                        ),
+                        const Text(
+                          'Posición actual:',
+                          style: TextStyle(
+                              fontSize: 10.0,
+                              color: Color(0xfffbe4d8),
+                              fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(
+                          width: 10,
+                        ),
+                        Text(
+                          '$actualPosition%',
+                          style: const TextStyle(
+                              fontSize: 15.0,
+                              color: Color(0xFFdfb6b2),
+                              fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(
+                          width: 20,
+                        ),
+                        const Text(
+                          'Posición deseada:',
+                          style: TextStyle(
+                              fontSize: 10.0,
+                              color: Color(0xfffbe4d8),
+                              fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(
+                          width: 10,
+                        ),
+                        Text(
+                          '$workingPosition%',
+                          style: const TextStyle(
+                              fontSize: 15.0,
+                              color: Color(0xFFdfb6b2),
+                              fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(
+                          width: 20,
+                        ),
+                      ]),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Estado actual:',
+                        style: TextStyle(
+                            fontSize: 10.0,
+                            color: Color(0xfffbe4d8),
+                            fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(
+                        width: 20,
+                      ),
+                      Text(
+                        rollerMoving ? 'EN MOVIMIENTO' : 'QUIETO',
+                        style: const TextStyle(
+                            fontSize: 15.0,
+                            color: Color(0xFFdfb6b2),
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+              const SizedBox(
+                height: 30,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  GestureDetector(
+                    onLongPressStart: (LongPressStartDetails a) {
+                      String data = '024011_IOT[7](0%)';
+                      myDevice.toolsUuid.write(data.codeUnits);
+                      setState(() {
+                        workingPosition = 0;
+                      });
+                      printLog(data);
+                    },
+                    onLongPressEnd: (LongPressEndDetails a) {
+                      String data = '024011_IOT[7]($actualPosition%)';
+                      myDevice.toolsUuid.write(data.codeUnits);
+                      setState(() {
+                        workingPosition = actualPosition;
+                      });
+                      printLog(data);
+                    },
+                    child: ElevatedButton(
+                      onPressed: () {},
+                      child: const Text('Subir'),
+                    ),
+                  ),
+                  const SizedBox(
+                    width: 20,
+                  ),
+                  GestureDetector(
+                    onLongPressStart: (LongPressStartDetails a) {
+                      String data = '024011_IOT[7](100%)';
+                      myDevice.toolsUuid.write(data.codeUnits);
+                      setState(() {
+                        workingPosition = 100;
+                      });
+                      printLog(data);
+                    },
+                    onLongPressEnd: (LongPressEndDetails a) {
+                      String data = '024011_IOT[7]($actualPosition%)';
+                      myDevice.toolsUuid.write(data.codeUnits);
+                      setState(() {
+                        workingPosition = actualPosition;
+                      });
+                      printLog(data);
+                    },
+                    child: ElevatedButton(
+                      onPressed: () {},
+                      child: const Text('Bajar'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              const Divider(),
+              const SizedBox(
+                height: 10,
+              ),
+              Row(
+                children: [
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  Column(
+                    children: [
+                      const Text(
+                        'Largo del Roller:',
+                        style: TextStyle(
+                            fontSize: 20.0,
+                            color: Color(0xfffbe4d8),
+                            fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(
+                        width: 10,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Text(
+                            rollerlength,
+                            style: const TextStyle(
+                                fontSize: 25.0,
+                                color: Color(0xFFdfb6b2),
+                                fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(
+                            width: 5,
+                          ),
+                          const Text(
+                            'mm',
+                            style: TextStyle(
+                                fontSize: 20.0,
+                                color: Color(0xfffbe4d8),
+                                fontWeight: FontWeight.normal),
+                          ),
+                        ],
+                      )
+                    ],
+                  ),
+                  const Spacer(),
+                  ElevatedButton(
+                      onPressed: () {
+                        showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: const Text('Modificar largo (mm)'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    TextField(
+                                      controller: rLargeController,
+                                      keyboardType: TextInputType.number,
+                                      decoration: const InputDecoration(
+                                          label: Text(
+                                        'Ingresar tamaño:',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.normal),
+                                      )),
+                                      onSubmitted: (value) {
+                                        setRange(
+                                            int.parse(rLargeController.text));
+                                        setState(() {
+                                          rollerlength = value;
+                                        });
+                                        navigatorKey.currentState?.pop();
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                actions: [
+                                  TextButton(
+                                      onPressed: () {
+                                        setRange(
+                                            int.parse(rLargeController.text));
+                                        setState(() {
+                                          rollerlength = rLargeController.text;
+                                        });
+                                        navigatorKey.currentState?.pop();
+                                      },
+                                      child: const Text('Modificar'))
+                                ],
+                              );
+                            });
+                      },
+                      child: const Text('Modificar')),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              const Divider(),
+              const SizedBox(
+                height: 10,
+              ),
+              Row(
+                children: [
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  const Text(
+                    'Polaridad del Roller:',
+                    style: TextStyle(
+                        fontSize: 20.0,
+                        color: Color(0xfffbe4d8),
+                        fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  Text(
+                    rollerPolarity,
+                    style: const TextStyle(
+                        fontSize: 25.0,
+                        color: Color(0xFFdfb6b2),
+                        fontWeight: FontWeight.bold),
+                  ),
+                  const Spacer(),
+                  ElevatedButton(
+                      onPressed: () => setRollerConfig(1),
+                      child: const Text('Invertir')),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              const Divider(),
+              const SizedBox(
+                height: 10,
+              ),
+              Row(
+                children: [
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Velocidad del motor:',
+                        style: TextStyle(
+                            fontSize: 20.0,
+                            color: Color(0xfffbe4d8),
+                            fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(
+                        width: 10,
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            motorSpeed,
+                            style: const TextStyle(
+                                fontSize: 25.0,
+                                color: Color(0xFFdfb6b2),
+                                fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(
+                            width: 5,
+                          ),
+                          const Text(
+                            'μm/ms',
+                            style: TextStyle(
+                                fontSize: 20.0,
+                                color: Color(0xfffbe4d8),
+                                fontWeight: FontWeight.normal),
+                          )
+                        ],
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  ElevatedButton(
+                      onPressed: () {
+                        showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title:
+                                    const Text('Modificar velocidad\n(μm/ms)'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    TextField(
+                                      controller: motorSpeedController,
+                                      keyboardType: TextInputType.number,
+                                      decoration: const InputDecoration(
+                                          label: Text(
+                                        'Ingresar velocidad:',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.normal),
+                                      )),
+                                      onSubmitted: (value) {
+                                        setMotorSpeed(int.parse(
+                                            motorSpeedController.text));
+                                        setState(() {
+                                          motorSpeed = value;
+                                        });
+                                        navigatorKey.currentState?.pop();
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                actions: [
+                                  TextButton(
+                                      onPressed: () {
+                                        setMotorSpeed(int.parse(
+                                            motorSpeedController.text));
+                                        setState(() {
+                                          motorSpeed =
+                                              motorSpeedController.text;
+                                        });
+                                        navigatorKey.currentState?.pop();
+                                      },
+                                      child: const Text('Modificar'))
+                                ],
+                              );
+                            });
+                      },
+                      child: const Text('Modificar')),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              const Divider(),
+              const SizedBox(
+                height: 10,
               ),
             ],
-          ],
+          ),
         ),
       ),
     );

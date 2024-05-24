@@ -56,7 +56,7 @@ String actualTemp = '';
 bool awsInit = false;
 bool tempMap = false;
 double tempValue = 0.0;
-String owner = '';
+bool distanceControlActive = false;
 
 bool alreadySubReg = false;
 bool alreadySubCal = false;
@@ -68,6 +68,13 @@ bool alive = false;
 
 String deviceResponseMqtt = '';
 
+String rollerlength = '';
+String rollerPolarity = '';
+String motorSpeed = '';
+int actualPosition = 0;
+int workingPosition = 0;
+bool rollerMoving = false;
+
 // Si esta en modo profile.
 const bool xProfileMode = bool.fromEnvironment('dart.vm.profile');
 // Si esta en modo release.
@@ -77,7 +84,7 @@ const bool xDebugMode = !xProfileMode && !xReleaseMode;
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
-String appVersionNumber = '24051300';
+String appVersionNumber = '24052402';
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
@@ -133,8 +140,8 @@ String command(String device) {
       return '041220_IOT';
     case '020010':
       return '020010_IOT';
-    case '030710':
-      return '030710_IOT';
+    case '024011':
+      return '024011_IOT';
     default:
       return '';
   }
@@ -579,10 +586,9 @@ class MyDevice {
       var fun = partes[0].split('_');
       factoryMode = partes[2].contains('_F');
       deviceType = fun[0];
+      serialNumber = partes[1];
       softwareVersion = partes[2];
       hardwareVersion = partes[3];
-      owner = partes[4];
-      serialNumber = partes[1];
       printLog('Device: $deviceType');
       printLog('Product code: ${partes[0]}');
       printLog('Serial number: ${extractSerialNumber(device.platformName)}');
@@ -662,7 +668,18 @@ class MyDevice {
                   'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
 
           break;
-        case '030710':
+        case '024011':
+          BluetoothService espService = services.firstWhere(
+              (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
+
+          varsUuid = espService.characteristics.firstWhere((c) =>
+              c.uuid ==
+              Guid(
+                  '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //DstCtrl:LargoRoller:InversionGiro:VelocidadMotor:PosicionActual:PosicionTrabajo:RollerMoving:AWSinit
+          otaUuid = espService.characteristics.firstWhere((c) =>
+              c.uuid ==
+              Guid(
+                  'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
           break;
       }
 
@@ -881,5 +898,61 @@ class GlobalDataNotifier extends ChangeNotifier {
       _data = newData;
       notifyListeners(); // Esto notifica a todos los oyentes que algo cambió
     }
+  }
+}
+
+//*-Slider-*//Cositas
+
+class IconThumbSlider extends SliderComponentShape {
+  final IconData iconData;
+  final double thumbRadius;
+
+  const IconThumbSlider({required this.iconData, required this.thumbRadius});
+
+  @override
+  Size getPreferredSize(bool isEnabled, bool isDiscrete) {
+    return Size.fromRadius(thumbRadius);
+  }
+
+  @override
+  void paint(
+    PaintingContext context,
+    Offset center, {
+    required Animation<double> activationAnimation,
+    required Animation<double> enableAnimation,
+    required bool isDiscrete,
+    required TextPainter labelPainter,
+    required RenderBox parentBox,
+    required SliderThemeData sliderTheme,
+    required TextDirection textDirection,
+    required double value,
+    required double textScaleFactor,
+    required Size sizeWithOverflow,
+  }) {
+    final Canvas canvas = context.canvas;
+
+    // Draw the thumb as a circle
+    final paint = Paint()
+      ..color = sliderTheme.thumbColor!
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(center, thumbRadius, paint);
+
+    // Draw the icon on the thumb
+    TextSpan span = TextSpan(
+      style: TextStyle(
+        fontSize: thumbRadius,
+        fontFamily: iconData.fontFamily,
+        color: sliderTheme.valueIndicatorColor,
+      ),
+      text: String.fromCharCode(iconData.codePoint),
+    );
+    TextPainter tp = TextPainter(text: span, textAlign: TextAlign.center, textDirection: TextDirection.ltr);
+    tp.layout();
+    Offset iconOffset = Offset(
+      center.dx - (tp.width / 2),
+      center.dy - (tp.height / 2),
+    );
+    tp.paint(canvas, iconOffset);
   }
 }

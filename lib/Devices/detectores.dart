@@ -63,7 +63,9 @@ class DetectorTabsState extends State<DetectorTabs> {
           errorMessage = parts[1];
         }
 
-        errorSintax = getWifiErrorSintax(int.parse(parts[1]));
+        if (int.tryParse(parts[1]) != null) {
+          errorSintax = getWifiErrorSintax(int.parse(parts[1]));
+        }
       }
     }
 
@@ -1334,6 +1336,7 @@ class CredsTabState extends State<CredsTab> {
   String? amazonCA;
   String? privateKey;
   String? deviceCert;
+  bool sending = false;
 
   @override
   Widget build(BuildContext context) {
@@ -1448,43 +1451,51 @@ class CredsTabState extends State<CredsTab> {
               ),
               SizedBox(
                 width: 300,
-                child: ElevatedButton(
-                  onPressed: () {
-                    printLog(amazonCA);
-                    printLog(privateKey);
-                    printLog(deviceCert);
+                child: sending
+                    ? const CircularProgressIndicator()
+                    : ElevatedButton(
+                        onPressed: () async {
+                          printLog(amazonCA);
+                          printLog(privateKey);
+                          printLog(deviceCert);
 
-                    if (amazonCA != null &&
-                        privateKey != null &&
-                        deviceCert != null) {
-                      printLog('Estan todos anashe');
-                      registerActivity(
-                          command(deviceType),
-                          extractSerialNumber(deviceName),
-                          'Se asigno credenciales de AWS al equipo');
-                      writeLarge(amazonCA!, 0, deviceType);
-                      writeLarge(deviceCert!, 1, deviceType);
-                      writeLarge(privateKey!, 2, deviceType);
-                    }
-                  },
-                  child: const Center(
-                    child: Column(
-                      children: [
-                        SizedBox(height: 10),
-                        Icon(
-                          Icons.perm_identity,
-                          size: 16,
+                          if (amazonCA != null &&
+                              privateKey != null &&
+                              deviceCert != null) {
+                            printLog('Estan todos anashe');
+                            registerActivity(
+                                command(deviceType),
+                                extractSerialNumber(deviceName),
+                                'Se asigno credenciales de AWS al equipo');
+                            setState(() {
+                              sending = true;
+                            });
+                            await writeLarge(amazonCA!, 0, deviceType);
+                            await writeLarge(deviceCert!, 1, deviceType);
+                            await writeLarge(privateKey!, 2, deviceType);
+                            setState(() {
+                              sending = false;
+                            });
+                          }
+                        },
+                        child: const Center(
+                          child: Column(
+                            children: [
+                              SizedBox(height: 10),
+                              Icon(
+                                Icons.perm_identity,
+                                size: 16,
+                              ),
+                              SizedBox(height: 10),
+                              Text(
+                                'Enviar certificados',
+                                textAlign: TextAlign.center,
+                              ),
+                              SizedBox(height: 10),
+                            ],
+                          ),
                         ),
-                        SizedBox(height: 10),
-                        Text(
-                          'Enviar certificados',
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: 10),
-                      ],
-                    ),
-                  ),
-                ),
+                      ),
               ),
             ],
           ),
