@@ -737,7 +737,7 @@ class CredsTabState extends State<CredsTab> {
                 TextSpan(
                   children: [
                     const TextSpan(
-                      text: '¿El equipo tiene una Thing cargada? ',
+                      text: '¿Thing cargada? ',
                       style: TextStyle(
                         color: Color(0xfffbe4d8),
                         fontSize: 20,

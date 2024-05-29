@@ -1348,28 +1348,28 @@ class CredsTabState extends State<CredsTab> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text.rich(
-                TextSpan(
-                  children: [
-                    const TextSpan(
-                      text: '¿El equipo tiene una Thing cargada? ',
-                      style: TextStyle(
-                        color: Color(0xfffbe4d8),
-                        fontSize: 20,
-                      ),
-                    ),
-                    TextSpan(
-                      text: awsInit ? 'SI' : 'NO',
-                      style: TextStyle(
-                        color: awsInit
-                            ? const Color(0xff854f6c)
-                            : const Color(0xffFF0000),
-                        fontSize: 20,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              // Text.rich(
+              //   TextSpan(
+              //     children: [
+              //       const TextSpan(
+              //         text: '¿Thing cargada? ',
+              //         style: TextStyle(
+              //           color: Color(0xfffbe4d8),
+              //           fontSize: 20,
+              //         ),
+              //       ),
+              //       TextSpan(
+              //         text: awsInit ? 'SI' : 'NO',
+              //         style: TextStyle(
+              //           color: awsInit
+              //               ? const Color(0xff854f6c)
+              //               : const Color(0xffFF0000),
+              //           fontSize: 20,
+              //         ),
+              //       ),
+              //     ],
+              //   ),
+              // ),
               const SizedBox(height: 30),
               SizedBox(
                 width: 300,
@@ -1452,7 +1452,7 @@ class CredsTabState extends State<CredsTab> {
               SizedBox(
                 width: 300,
                 child: sending
-                    ? const CircularProgressIndicator()
+                    ? const LinearProgressIndicator()
                     : ElevatedButton(
                         onPressed: () async {
                           printLog(amazonCA);
@@ -1535,24 +1535,26 @@ class OTAState extends State<OTAPage> {
     String url = '';
     if (value == 0) {
       //ota factory
+      //https://github.com/barberop/sime-domotica/raw/main/015773_IOT/OTA_FW/F/hv240214Asv240524D_F.bin
       if (otaSVController.text.contains('_F')) {
         url =
-            'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
+            'https://github.com/barberop/sime-domotica/raw/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
       } else {
         url =
-            'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}_F.bin';
+            'https://github.com/barberop/sime-domotica/raw/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}_F.bin';
       }
     } else if (value == 1) {
       //ota work
       url =
-          'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
+          'https://github.com/barberop/sime-domotica/raw/main/${command(deviceType)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
     } else if (value == 2) {
       //ota pic
       url =
-          'https://github.com/barberop/sime-domotica/tree/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}.hex';
+          'https://github.com/barberop/sime-domotica/raw/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}.hex';
       otaPIC = true;
     }
 
+    printLog(url);
     if (otaPIC == true) {
       try {
         String data = '015773_IOT[9]($url)';
@@ -1765,36 +1767,36 @@ class OTAState extends State<OTAPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  height: 40,
-                  width: 300,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    color: const Color(0xff854f6c),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: LinearProgressIndicator(
-                      value: picwritingprogressValue,
-                      backgroundColor: Colors.transparent,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                          Color(0xff2b124c)),
-                    ),
-                  ),
-                ),
-                Text(
-                  'Progreso escritura OTA PIC: ${(picwritingprogressValue * 100).toInt()}%',
-                  style: const TextStyle(
-                    color: Color(0xffdfb6b2),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
+            // const SizedBox(height: 10),
+            // Stack(
+            //   alignment: Alignment.center,
+            //   children: [
+            //     Container(
+            //       height: 40,
+            //       width: 300,
+            //       decoration: BoxDecoration(
+            //         borderRadius: BorderRadius.circular(20),
+            //         color: const Color(0xff854f6c),
+            //       ),
+            //       child: ClipRRect(
+            //         borderRadius: BorderRadius.circular(20),
+            //         child: LinearProgressIndicator(
+            //           value: picwritingprogressValue,
+            //           backgroundColor: Colors.transparent,
+            //           valueColor: const AlwaysStoppedAnimation<Color>(
+            //               Color(0xff2b124c)),
+            //         ),
+            //       ),
+            //     ),
+            //     Text(
+            //       'Progreso escritura OTA PIC: ${(picwritingprogressValue * 100).toInt()}%',
+            //       style: const TextStyle(
+            //         color: Color(0xffdfb6b2),
+            //         fontWeight: FontWeight.bold,
+            //       ),
+            //     ),
+            //   ],
+            // ),
             const SizedBox(height: 10),
             Stack(
               alignment: Alignment.center,
@@ -1825,36 +1827,36 @@ class OTAState extends State<OTAPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  height: 40,
-                  width: 300,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    color: const Color(0xff854f6c),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: LinearProgressIndicator(
-                      value: writingprogressValue,
-                      backgroundColor: Colors.transparent,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                          Color(0xff2b124c)),
-                    ),
-                  ),
-                ),
-                Text(
-                  'Progreso escritura OTA ESP: ${(writingprogressValue * 100).toInt()}%',
-                  style: const TextStyle(
-                    color: Color(0xffdfb6b2),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
+            // const SizedBox(height: 10),
+            // Stack(
+            //   alignment: Alignment.center,
+            //   children: [
+            //     Container(
+            //       height: 40,
+            //       width: 300,
+            //       decoration: BoxDecoration(
+            //         borderRadius: BorderRadius.circular(20),
+            //         color: const Color(0xff854f6c),
+            //       ),
+            //       child: ClipRRect(
+            //         borderRadius: BorderRadius.circular(20),
+            //         child: LinearProgressIndicator(
+            //           value: writingprogressValue,
+            //           backgroundColor: Colors.transparent,
+            //           valueColor: const AlwaysStoppedAnimation<Color>(
+            //               Color(0xff2b124c)),
+            //         ),
+            //       ),
+            //     ),
+            //     Text(
+            //       'Progreso escritura OTA ESP: ${(writingprogressValue * 100).toInt()}%',
+            //       style: const TextStyle(
+            //         color: Color(0xffdfb6b2),
+            //         fontWeight: FontWeight.bold,
+            //       ),
+            //     ),
+            //   ],
+            // ),
             const SizedBox(height: 20),
             SizedBox(
                 width: 300,

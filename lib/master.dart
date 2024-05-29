@@ -84,7 +84,7 @@ const bool xDebugMode = !xProfileMode && !xReleaseMode;
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
-String appVersionNumber = '24052402';
+String appVersionNumber = '24052900';
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
@@ -567,7 +567,7 @@ class MyDevice {
 
       List<BluetoothService> services =
           await device.discoverServices(timeout: 3);
-      printLog('Los servicios: $services');
+      // printLog('Los servicios: $services');
 
       BluetoothService infoService = services.firstWhere(
           (s) => s.uuid == Guid('6a3253b4-48bc-4e97-bacd-325a1d142038'));
@@ -601,7 +601,7 @@ class MyDevice {
           varsUuid = espService.characteristics.firstWhere((c) =>
               c.uuid ==
               Guid(
-                  '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //WorkingTemp:WorkingStatus:EnergyTimer:FlamingStatus:NightMode:actualTemp:Thing?:TempMap?:Offset
+                  '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //DistanceControl:WorkingTemp:WorkingStatus:EnergyTimer:FlamingStatus:NightMode:actualTemp:Thing?:TempMap?:Offset
           otaUuid = espService.characteristics.firstWhere((c) =>
               c.uuid ==
               Guid(
@@ -614,7 +614,7 @@ class MyDevice {
           varsUuid = espService.characteristics.firstWhere((c) =>
               c.uuid ==
               Guid(
-                  '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //WorkingTemp:WorkingStatus:EnergyTimer:HeaterOn:NightMode
+                  '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //DistanceControl:WorkingTemp:WorkingStatus:EnergyTimer:FlamingStatus:NightMode:actualTemp:Thing?:TempMap?:Offset
           otaUuid = espService.characteristics.firstWhere((c) =>
               c.uuid ==
               Guid(
@@ -627,7 +627,7 @@ class MyDevice {
           varsUuid = espService.characteristics.firstWhere((c) =>
               c.uuid ==
               Guid(
-                  '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //WorkingTemp:WorkingStatus:EnergyTimer:HeaterOn:NightMode
+                  '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //DistanceControl:WorkingTemp:WorkingStatus:EnergyTimer:FlamingStatus:NightMode:actualTemp:Thing?:TempMap?:Offset
           otaUuid = espService.characteristics.firstWhere((c) =>
               c.uuid ==
               Guid(
@@ -947,7 +947,10 @@ class IconThumbSlider extends SliderComponentShape {
       ),
       text: String.fromCharCode(iconData.codePoint),
     );
-    TextPainter tp = TextPainter(text: span, textAlign: TextAlign.center, textDirection: TextDirection.ltr);
+    TextPainter tp = TextPainter(
+        text: span,
+        textAlign: TextAlign.center,
+        textDirection: TextDirection.ltr);
     tp.layout();
     Offset iconOffset = Offset(
       center.dx - (tp.width / 2),
