@@ -1934,11 +1934,13 @@ class LoadState extends State<LoadingPage> {
         distanceControlActive = parts2[0] == '1';
         rollerlength = parts2[1];
         rollerPolarity = parts2[2];
-        motorSpeed = parts2[3];
-        actualPosition = int.parse(parts2[4]);
-        workingPosition = int.parse(parts2[5]);
-        rollerMoving = parts2[6] == '1';
-        awsInit = parts2[7] == '1';
+        motorSpeedUp = parts2[3];
+        motorSpeedDown = parts2[4];
+        contrapulseTime = parts2[5];
+        actualPosition = int.parse(parts2[6]);
+        workingPosition = int.parse(parts2[7]);
+        rollerMoving = parts2[8] == '1';
+        awsInit = parts2[9] == '1';
       }
 
       return Future.value(true);

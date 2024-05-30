@@ -70,7 +70,9 @@ String deviceResponseMqtt = '';
 
 String rollerlength = '';
 String rollerPolarity = '';
-String motorSpeed = '';
+String motorSpeedUp = '';
+String motorSpeedDown = '';
+String contrapulseTime = '';
 int actualPosition = 0;
 int workingPosition = 0;
 bool rollerMoving = false;
@@ -84,7 +86,7 @@ const bool xDebugMode = !xProfileMode && !xReleaseMode;
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
-String appVersionNumber = '24052900';
+String appVersionNumber = '24053000';
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
@@ -148,6 +150,10 @@ String command(String device) {
 }
 
 String generateErrorReport(FlutterErrorDetails details) {
+  printLog('''
+Error: ${details.exception}
+Stacktrace: ${details.stack}
+  ''');
   return '''
 Error: ${details.exception}
 Stacktrace: ${details.stack}
@@ -432,38 +438,56 @@ void registerActivity(
 
 void wifiText(BuildContext context) {
   showDialog(
+    barrierDismissible: true,
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
-        title: Row(children: [
-          const Text.rich(TextSpan(
-              text: 'Estado de conexión: ',
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 14,
-              ))),
-          Text.rich(TextSpan(
-              text: textState,
-              style: TextStyle(
-                  color: statusColor,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold)))
-        ]),
+        title: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              const Text.rich(
+                TextSpan(
+                  text: 'Estado de conexión: ',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.black
+                  ),
+                ),
+              ),
+              Text.rich(
+                TextSpan(
+                  text: textState,
+                  style: TextStyle(
+                      color: statusColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold),
+                ),
+              )
+            ],
+          ),
+        ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text.rich(TextSpan(
+              Text.rich(
+                TextSpan(
                   text: 'Error: $errorMessage',
                   style: const TextStyle(
                     fontSize: 10,
-                  ))),
+                  ),
+                ),
+              ),
               const SizedBox(height: 10),
-              Text.rich(TextSpan(
+              Text.rich(
+                TextSpan(
                   text: 'Sintax: $errorSintax',
                   style: const TextStyle(
                     fontSize: 10,
-                  ))),
+                  ),
+                ),
+              ),
               const SizedBox(height: 10),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -477,16 +501,26 @@ void wifiText(BuildContext context) {
                   ),
                   Text(
                     nameOfWifi,
-                    style: const TextStyle(fontSize: 20),
+                    style: const TextStyle(
+                      fontSize: 20,
+                    ),
                   ),
                 ]),
               ),
               const SizedBox(height: 10),
-              const Text.rich(TextSpan(
+              const Text.rich(
+                TextSpan(
                   text: 'Ingrese los datos de WiFi',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
               IconButton(
-                icon: const Icon(Icons.qr_code),
+                icon: const Icon(
+                  Icons.qr_code,
+                ),
                 iconSize: 50,
                 onPressed: () async {
                   PermissionStatus permissionStatusC =
@@ -501,13 +535,30 @@ void wifiText(BuildContext context) {
                 },
               ),
               TextField(
-                decoration: const InputDecoration(hintText: 'Nombre de la red'),
+                decoration: const InputDecoration(
+                  hintText: 'Nombre de la red',
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(),
+                  ),
+                ),
                 onChanged: (value) {
                   wifiName = value;
                 },
               ),
               TextField(
-                decoration: const InputDecoration(hintText: 'Contraseña'),
+                decoration: const InputDecoration(
+                  hintText: 'Contraseña',
+                  hintStyle: TextStyle(),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(),
+                  ),
+                ),
                 obscureText: true,
                 onChanged: (value) {
                   wifiPassword = value;
@@ -518,13 +569,10 @@ void wifiText(BuildContext context) {
         ),
         actions: [
           TextButton(
-            child: const Text('Cancelar'),
-            onPressed: () {
-              navigatorKey.currentState?.pop();
-            },
-          ),
-          TextButton(
-            child: const Text('Aceptar'),
+            style: const ButtonStyle(),
+            child: const Text(
+              'Aceptar',
+            ),
             onPressed: () {
               sendWifitoBle();
               navigatorKey.currentState?.pop();

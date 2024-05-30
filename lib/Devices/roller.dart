@@ -430,7 +430,9 @@ class RollcontrolTab extends StatefulWidget {
 class RollcontrolTabState extends State<RollcontrolTab> {
   TextEditingController rLargeController = TextEditingController();
   TextEditingController workController = TextEditingController();
-  TextEditingController motorSpeedController = TextEditingController();
+  TextEditingController motorSpeedUpController = TextEditingController();
+  TextEditingController motorSpeedDownController = TextEditingController();
+  TextEditingController contrapulseController = TextEditingController();
 
   @override
   void initState() {
@@ -460,13 +462,19 @@ class RollcontrolTabState extends State<RollcontrolTab> {
     myDevice.toolsUuid.write(data.codeUnits);
   }
 
+  void setcontrapulse(int ms) {
+    String data = '024011_IOT[11]($ms)';
+    myDevice.toolsUuid.write(data.codeUnits);
+  }
+
   void setDistance(int pc) {
     String data = '024011_IOT[7]($pc%)';
     myDevice.toolsUuid.write(data.codeUnits);
   }
 
-  void setMotorSpeed(int speed) {
-    String data = '024011_IOT[9]($speed)';
+  void setMotorSpeed(int speedUp, int speedDown) {
+    String data = '024011_IOT[9]($speedUp#$speedDown)';
+    printLog(data);
     myDevice.toolsUuid.write(data.codeUnits);
   }
 
@@ -669,6 +677,17 @@ class RollcontrolTabState extends State<RollcontrolTab> {
               const SizedBox(
                 height: 10,
               ),
+              ElevatedButton(
+                  onPressed: () {
+                    workingPosition = 0;
+                    String data = '024011_IOT[7](0%)';
+                    myDevice.toolsUuid.write(data.codeUnits);
+                    setRollerConfig(0);
+                  },
+                  child: const Text('Setear punto 0')),
+              const SizedBox(
+                height: 10,
+              ),
               const Divider(),
               const SizedBox(
                 height: 10,
@@ -735,11 +754,17 @@ class RollcontrolTabState extends State<RollcontrolTab> {
                                             fontWeight: FontWeight.normal),
                                       )),
                                       onSubmitted: (value) {
-                                        setRange(
-                                            int.parse(rLargeController.text));
-                                        setState(() {
-                                          rollerlength = value;
-                                        });
+                                        int? valor =
+                                            int.tryParse(rLargeController.text);
+                                        if (valor != null) {
+                                          setRange(valor);
+                                          setState(() {
+                                            rollerlength = value;
+                                          });
+                                        } else {
+                                          showToast('Valor no permitido');
+                                        }
+                                        rLargeController.clear();
                                         navigatorKey.currentState?.pop();
                                       },
                                     ),
@@ -748,11 +773,133 @@ class RollcontrolTabState extends State<RollcontrolTab> {
                                 actions: [
                                   TextButton(
                                       onPressed: () {
-                                        setRange(
-                                            int.parse(rLargeController.text));
-                                        setState(() {
-                                          rollerlength = rLargeController.text;
-                                        });
+                                        int? valor =
+                                            int.tryParse(rLargeController.text);
+                                        if (valor != null) {
+                                          setRange(valor);
+                                          setState(() {
+                                            rollerlength =
+                                                rLargeController.text;
+                                          });
+                                        } else {
+                                          showToast('Valor no permitido');
+                                        }
+                                        rLargeController.clear();
+                                        navigatorKey.currentState?.pop();
+                                      },
+                                      child: const Text('Modificar'))
+                                ],
+                              );
+                            });
+                      },
+                      child: const Text('Modificar')),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              const Divider(),
+              const SizedBox(
+                height: 10,
+              ),
+              Row(
+                children: [
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  Column(
+                    children: [
+                      const Text(
+                        'Duración del\n contrapulso:',
+                        style: TextStyle(
+                            fontSize: 20.0,
+                            color: Color(0xfffbe4d8),
+                            fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(
+                        width: 10,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Text(
+                            contrapulseTime,
+                            style: const TextStyle(
+                                fontSize: 25.0,
+                                color: Color(0xFFdfb6b2),
+                                fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(
+                            width: 5,
+                          ),
+                          const Text(
+                            'ms',
+                            style: TextStyle(
+                                fontSize: 20.0,
+                                color: Color(0xfffbe4d8),
+                                fontWeight: FontWeight.normal),
+                          ),
+                        ],
+                      )
+                    ],
+                  ),
+                  const Spacer(),
+                  ElevatedButton(
+                      onPressed: () {
+                        showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: const Text(
+                                    'Modificar duración del contrapulso (ms)'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    TextField(
+                                      controller: contrapulseController,
+                                      keyboardType: TextInputType.number,
+                                      decoration: const InputDecoration(
+                                          label: Text(
+                                        'Ingresar tiempo:',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.normal),
+                                      )),
+                                      onSubmitted: (value) {
+                                        int? valor = int.tryParse(
+                                            contrapulseController.text);
+                                        if (valor != null) {
+                                          setcontrapulse(valor);
+                                          setState(() {
+                                            contrapulseTime = value;
+                                          });
+                                        } else {
+                                          showToast('Valor no permitido');
+                                        }
+                                        contrapulseController.clear();
+                                        navigatorKey.currentState?.pop();
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                actions: [
+                                  TextButton(
+                                      onPressed: () {
+                                        int? valor = int.tryParse(
+                                            contrapulseController.text);
+                                        if (valor != null) {
+                                          setcontrapulse(valor);
+
+                                          setState(() {
+                                            contrapulseTime =
+                                                contrapulseController.text;
+                                          });
+                                        } else {
+                                          showToast('Valor no permitido');
+                                        }
+                                        contrapulseController.clear();
                                         navigatorKey.currentState?.pop();
                                       },
                                       child: const Text('Modificar'))
@@ -811,48 +958,82 @@ class RollcontrolTabState extends State<RollcontrolTab> {
               const SizedBox(
                 height: 10,
               ),
-              Row(
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  const Text(
+                    'Velocidad del motor subida:',
+                    style: TextStyle(
+                        fontSize: 20.0,
+                        color: Color(0xfffbe4d8),
+                        fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(
                     width: 10,
                   ),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        'Velocidad del motor:',
-                        style: TextStyle(
-                            fontSize: 20.0,
-                            color: Color(0xfffbe4d8),
+                      Text(
+                        motorSpeedUp,
+                        style: const TextStyle(
+                            fontSize: 25.0,
+                            color: Color(0xFFdfb6b2),
                             fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(
-                        width: 10,
+                        width: 5,
                       ),
-                      Row(
-                        children: [
-                          Text(
-                            motorSpeed,
-                            style: const TextStyle(
-                                fontSize: 25.0,
-                                color: Color(0xFFdfb6b2),
-                                fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(
-                            width: 5,
-                          ),
-                          const Text(
-                            'μm/ms',
-                            style: TextStyle(
-                                fontSize: 20.0,
-                                color: Color(0xfffbe4d8),
-                                fontWeight: FontWeight.normal),
-                          )
-                        ],
+                      const Text(
+                        'μm/ms',
+                        style: TextStyle(
+                            fontSize: 20.0,
+                            color: Color(0xfffbe4d8),
+                            fontWeight: FontWeight.normal),
                       ),
                     ],
                   ),
-                  const Spacer(),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  const Text(
+                    'Velocidad del motor bajada:',
+                    style: TextStyle(
+                        fontSize: 20.0,
+                        color: Color(0xfffbe4d8),
+                        fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        motorSpeedDown,
+                        style: const TextStyle(
+                            fontSize: 25.0,
+                            color: Color(0xFFdfb6b2),
+                            fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(
+                        width: 5,
+                      ),
+                      const Text(
+                        'μm/ms',
+                        style: TextStyle(
+                            fontSize: 20.0,
+                            color: Color(0xfffbe4d8),
+                            fontWeight: FontWeight.normal),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
                   ElevatedButton(
                       onPressed: () {
                         showDialog(
@@ -865,21 +1046,33 @@ class RollcontrolTabState extends State<RollcontrolTab> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     TextField(
-                                      controller: motorSpeedController,
+                                      controller: motorSpeedUpController,
                                       keyboardType: TextInputType.number,
                                       decoration: const InputDecoration(
                                           label: Text(
-                                        'Ingresar velocidad:',
+                                        'Ingresar velocidad subida:',
                                         style: TextStyle(
                                             fontWeight: FontWeight.normal),
                                       )),
-                                      onSubmitted: (value) {
-                                        setMotorSpeed(int.parse(
-                                            motorSpeedController.text));
+                                      onChanged: (value) {
                                         setState(() {
-                                          motorSpeed = value;
+                                          motorSpeedUp = value;
                                         });
-                                        navigatorKey.currentState?.pop();
+                                      },
+                                    ),
+                                    TextField(
+                                      controller: motorSpeedDownController,
+                                      keyboardType: TextInputType.number,
+                                      decoration: const InputDecoration(
+                                          label: Text(
+                                        'Ingresar velocidad bajada:',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.normal),
+                                      )),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          motorSpeedDown = value;
+                                        });
                                       },
                                     ),
                                   ],
@@ -887,12 +1080,22 @@ class RollcontrolTabState extends State<RollcontrolTab> {
                                 actions: [
                                   TextButton(
                                       onPressed: () {
-                                        setMotorSpeed(int.parse(
-                                            motorSpeedController.text));
-                                        setState(() {
-                                          motorSpeed =
-                                              motorSpeedController.text;
-                                        });
+                                        int? speedUp =
+                                            motorSpeedUpController.text != ''
+                                                ? int.tryParse(motorSpeedUp)
+                                                : 0;
+                                        int? speedDown =
+                                            motorSpeedDownController.text != ''
+                                                ? int.tryParse(motorSpeedDown)
+                                                : 0;
+                                        if (speedUp != null &&
+                                            speedDown != null) {
+                                          setMotorSpeed(speedUp, speedDown);
+                                          motorSpeedDownController.clear();
+                                          motorSpeedUpController.clear();
+                                        } else {
+                                          showToast('Valores no permitidos');
+                                        }
                                         navigatorKey.currentState?.pop();
                                       },
                                       child: const Text('Modificar'))
@@ -901,9 +1104,6 @@ class RollcontrolTabState extends State<RollcontrolTab> {
                             });
                       },
                       child: const Text('Modificar')),
-                  const SizedBox(
-                    width: 10,
-                  ),
                 ],
               ),
               const SizedBox(
