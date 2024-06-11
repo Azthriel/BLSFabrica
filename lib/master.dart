@@ -86,7 +86,7 @@ const bool xDebugMode = !xProfileMode && !xReleaseMode;
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
-String appVersionNumber = '24053000';
+String appVersionNumber = '24060600';
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
@@ -449,10 +449,7 @@ void wifiText(BuildContext context) {
               const Text.rich(
                 TextSpan(
                   text: 'Estado de conexión: ',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.black
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.black),
                 ),
               ),
               Text.rich(
@@ -608,6 +605,7 @@ class MyDevice {
   late BluetoothCharacteristic otaUuid;
   late BluetoothCharacteristic debugUuid;
   late BluetoothCharacteristic ioUuid;
+  late BluetoothCharacteristic patitoUuid;
 
   Future<bool> setup(BluetoothDevice connectedDevice) async {
     try {
@@ -725,6 +723,16 @@ class MyDevice {
               Guid(
                   '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //DstCtrl:LargoRoller:InversionGiro:VelocidadMotor:PosicionActual:PosicionTrabajo:RollerMoving:AWSinit
           otaUuid = espService.characteristics.firstWhere((c) =>
+              c.uuid ==
+              Guid(
+                  'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
+          break;
+        case '019000':
+          BluetoothService service = services.firstWhere(
+              (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
+          patitoUuid = service.characteristics.firstWhere(
+              (c) => c.uuid == Guid('03b1c5d9-534a-4980-aed3-f59615205216'));
+          otaUuid = service.characteristics.firstWhere((c) =>
               c.uuid ==
               Guid(
                   'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)

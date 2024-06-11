@@ -2,18 +2,19 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
+
 import 'package:biocaldensmartlifefabrica/master.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 
-class CalefactoresTab extends StatefulWidget {
-  const CalefactoresTab({super.key});
+class PatitoTab extends StatefulWidget {
+  const PatitoTab({super.key});
   @override
-  CalefactoresTabState createState() => CalefactoresTabState();
+  PatitoTabTabState createState() => PatitoTabTabState();
 }
 
-class CalefactoresTabState extends State<CalefactoresTab> {
+class PatitoTabTabState extends State<PatitoTab> {
   @override
   initState() {
     super.initState();
@@ -103,7 +104,7 @@ class CalefactoresTabState extends State<CalefactoresTab> {
           useMaterial3: true,
         ),
         home: DefaultTabController(
-          length: factoryMode ? 4 : 3,
+          length: 4,
           child: PopScope(
             canPop: false,
             onPopInvoked: (didPop) {
@@ -138,17 +139,15 @@ class CalefactoresTabState extends State<CalefactoresTab> {
                 backgroundColor: const Color(0xFF522B5B),
                 foregroundColor: const Color(0xfffbe4d8),
                 title: Text(deviceName),
-                bottom: TabBar(
-                  labelColor: const Color(0xffdfb6b2),
-                  unselectedLabelColor: const Color(0xff190019),
-                  indicatorColor: const Color(0xffdfb6b2),
+                bottom: const TabBar(
+                  labelColor: Color(0xffdfb6b2),
+                  unselectedLabelColor: Color(0xff190019),
+                  indicatorColor: Color(0xffdfb6b2),
                   tabs: [
-                    const Tab(icon: Icon(Icons.settings)),
-                    const Tab(icon: Icon(Icons.thermostat)),
-                    if (factoryMode) ...[
-                      const Tab(icon: Icon(Icons.perm_identity))
-                    ],
-                    const Tab(icon: Icon(Icons.send)),
+                    Tab(icon: Icon(Icons.settings)),
+                    Tab(icon: Icon(Icons.list)),
+                    Tab(icon: Icon(Icons.perm_identity)),
+                    Tab(icon: Icon(Icons.send)),
                   ],
                 ),
                 actions: <Widget>[
@@ -164,12 +163,12 @@ class CalefactoresTabState extends State<CalefactoresTab> {
                   ),
                 ],
               ),
-              body: TabBarView(
+              body: const TabBarView(
                 children: [
-                  const ToolsPage(),
-                  const TempTab(),
-                  if (factoryMode) ...[const CredsTab()],
-                  const OtaTab(),
+                  ToolsPage(),
+                  ListTab(),
+                  CredsTab(),
+                  OtaTab(),
                 ],
               ),
             ),
@@ -178,7 +177,7 @@ class CalefactoresTabState extends State<CalefactoresTab> {
   }
 }
 
-//TOOLS TAB // Serial number, versión number
+//TOOLS Tab // Serial number, versión number
 
 class ToolsPage extends StatefulWidget {
   const ToolsPage({super.key});
@@ -255,37 +254,6 @@ class ToolsPageState extends State<ToolsPage> {
                 child: const Text('Enviar'),
               ),
               const SizedBox(height: 20),
-              const Text('Estado del control por distancia en el equipo:',
-                  textAlign: TextAlign.center,
-                  style: (TextStyle(
-                      fontSize: 20.0,
-                      color: Color(0xfffbe4d8),
-                      fontWeight: FontWeight.bold))),
-              Text.rich(
-                TextSpan(
-                    text: distanceControlActive ? 'Activado' : 'Desactivado',
-                    style: (const TextStyle(
-                        fontSize: 20.0,
-                        color: Color(0xFFdfb6b2),
-                        fontWeight: FontWeight.normal))),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              if (distanceControlActive) ...[
-                ElevatedButton(
-                  onPressed: () {
-                    String mailData = '${command(deviceType)}[5](0)';
-                    myDevice.toolsUuid.write(mailData.codeUnits);
-                    registerActivity(command(deviceType), serialNumber,
-                        'Se desactivo el control por distancia');
-                  },
-                  child: const Text(
-                    'Desacticar control por distancia',
-                  ),
-                ),
-              ],
-              const SizedBox(height: 20),
               const Text.rich(
                 TextSpan(
                     text: 'Version de software del modulo IOT:',
@@ -340,192 +308,6 @@ class ToolsPageState extends State<ToolsPage> {
               const SizedBox(
                 height: 10,
               ),
-              ElevatedButton(
-                  onPressed: () {
-                    registerActivity(command(deviceType), serialNumber,
-                        'Se mando el ciclado de la válvula de este equipo');
-                    String data = '${command(deviceType)}[13](1000#5)';
-                    myDevice.toolsUuid.write(data.codeUnits);
-                  },
-                  child: const Text('Ciclado fijo')),
-              const SizedBox(
-                height: 10,
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      final TextEditingController cicleController =
-                          TextEditingController();
-                      final TextEditingController timeController =
-                          TextEditingController();
-                      return AlertDialog(
-                        title: const Center(
-                          child: Text(
-                            'Especificar parametros del ciclador:',
-                            style: TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: 300,
-                              child: TextField(
-                                style: const TextStyle(color: Colors.black),
-                                controller: cicleController,
-                                keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(
-                                  labelText: 'Ingrese cantidad de ciclos',
-                                  hintText: 'Certificación: 1000',
-                                  labelStyle: TextStyle(color: Colors.black),
-                                  hintStyle: TextStyle(color: Colors.black),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 20,
-                            ),
-                            SizedBox(
-                              width: 300,
-                              child: TextField(
-                                style: const TextStyle(color: Colors.black),
-                                controller: timeController,
-                                keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(
-                                  labelText: 'Ingrese duración de los ciclos',
-                                  hintText: 'Recomendado: 1000',
-                                  suffixText: '(mS)',
-                                  suffixStyle: TextStyle(
-                                    color: Colors.black,
-                                  ),
-                                  labelStyle: TextStyle(
-                                    color: Colors.black,
-                                  ),
-                                  hintStyle: TextStyle(
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () {
-                              navigatorKey.currentState!.pop();
-                            },
-                            child: const Text('Cancelar'),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              registerActivity(
-                                  command(deviceType),
-                                  serialNumber,
-                                  'Se mando el ciclado de la válvula de este equipo');
-                              int cicle = int.parse(cicleController.text) * 2;
-                              String data =
-                                  '${command(deviceType)}[13](${timeController.text}#$cicle)';
-                              myDevice.toolsUuid.write(data.codeUnits);
-                              navigatorKey.currentState!.pop();
-                            },
-                            child: const Text('Iniciar proceso'),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-                style: ButtonStyle(
-                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18.0),
-                    ),
-                  ),
-                ),
-                child: const Text('Configurar ciclado'),
-              ),
-              const SizedBox(
-                height: 20,
-              ),
-              if (deviceType == '027000') ...[
-                ElevatedButton(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        final TextEditingController timeController =
-                            TextEditingController();
-                        return AlertDialog(
-                          title: const Center(
-                            child: Text(
-                              'Especificar parametros de la apertura temporizada:',
-                              style: TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                width: 300,
-                                child: TextField(
-                                  style: const TextStyle(color: Colors.black),
-                                  controller: timeController,
-                                  keyboardType: TextInputType.number,
-                                  decoration: const InputDecoration(
-                                    labelText:
-                                        'Ingrese cantidad de milisegundos',
-                                    labelStyle: TextStyle(color: Colors.black),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                navigatorKey.currentState!.pop();
-                              },
-                              child: const Text('Cancelar'),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                registerActivity(
-                                    command(deviceType),
-                                    serialNumber,
-                                    'Se mando el temporizado de apertura');
-                                String data =
-                                    '${command(deviceType)}[14](${timeController.text.trim()})';
-                                myDevice.toolsUuid.write(data.codeUnits);
-                                navigatorKey.currentState!.pop();
-                              },
-                              child: const Text('Iniciar proceso'),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                  style: ButtonStyle(
-                    shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                      RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18.0),
-                      ),
-                    ),
-                  ),
-                  child: const Text(
-                    'Configurar Apertura\nTemporizada',
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ]
             ],
           ),
         ),
@@ -534,257 +316,73 @@ class ToolsPageState extends State<ToolsPage> {
   }
 }
 
-//CONTROL TAB // On Off y set temperatura
+//LIST Tab //Show the data hat ble sends
 
-class TempTab extends StatefulWidget {
-  const TempTab({super.key});
+class ListTab extends StatefulWidget {
+  const ListTab({super.key});
   @override
-  TempTabState createState() => TempTabState();
+  State<ListTab> createState() => ListTabState();
 }
 
-class TempTabState extends State<TempTab> {
-  final TextEditingController roomTempController = TextEditingController();
+class ListTabState extends State<ListTab> {
+  List<String> things = [];
+  List<double> support = [];
+  List<DateTime> tiempos = [];
 
   @override
   void initState() {
     super.initState();
-    printLog('Valor temp: $tempValue');
-    printLog('¿Encendido? $turnOn');
-    subscribeTrueStatus();
+    subToPatito();
   }
 
-  void subscribeTrueStatus() async {
-    printLog('Me subscribo a vars');
-    await myDevice.varsUuid.setNotifyValue(true);
+  void subToPatito() {
+    myDevice.patitoUuid.setNotifyValue(true);
 
-    final trueStatusSub =
-        myDevice.varsUuid.onValueReceived.listen((List<int> status) {
-      var parts = utf8.decode(status).split(':');
-      printLog(parts);
+    final patitoSub = myDevice.patitoUuid.onValueReceived.listen((event) {
+      var parts = utf8.decode(event).split(':');
+      for(var part in parts){
+        support.add(double.parse(part)/1000);
+      }
       setState(() {
-        trueStatus = parts[0] == '1';
-        actualTemp = parts[1];
+        String fun  = support.join(':');
+        things.add(fun);
+        tiempos.add(DateTime.now());
       });
     });
 
-    myDevice.device.cancelWhenDisconnected(trueStatusSub);
-  }
-
-  void sendTemperature(int temp) {
-    String data = '${command(deviceType)}[7]($temp)';
-    myDevice.toolsUuid.write(data.codeUnits);
-  }
-
-  void turnDeviceOn(bool on) {
-    int fun = on ? 1 : 0;
-    String data = '${command(deviceType)}[11]($fun)';
-    myDevice.toolsUuid.write(data.codeUnits);
-  }
-
-  void sendRoomTemperature(String temp) {
-    String data = '${command(deviceType)}[8]($temp)';
-    myDevice.toolsUuid.write(data.codeUnits);
-  }
-
-  void startTempMap() {
-    String data = '${command(deviceType)}[12](0)';
-    myDevice.toolsUuid.write(data.codeUnits);
+    myDevice.device.cancelWhenDisconnected(patitoSub);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xff190019),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text.rich(
-              TextSpan(
-                text: turnOn
-                    ? trueStatus
-                        ? 'Calentando'
-                        : 'Encendido'
-                    : 'Apagado',
-                style: TextStyle(
-                    color: turnOn
-                        ? trueStatus
-                            ? Colors.amber[600]
-                            : Colors.green
-                        : Colors.red,
-                    fontSize: 30),
+      body: ListView.builder(
+          itemCount: things.length,
+          itemBuilder: (context, index) {
+            return ListTile(
+              title: Text(
+                things[index],
+                style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xffdfb6b2)),
               ),
-            ),
-            const SizedBox(height: 30),
-            Transform.scale(
-              scale: 3.0,
-              child: Switch(
-                activeColor: const Color(0xfffbe4d8),
-                activeTrackColor: const Color(0xff854f6c),
-                inactiveThumbColor: const Color(0xff854f6c),
-                inactiveTrackColor: const Color(0xfffbe4d8),
-                value: turnOn,
-                onChanged: (value) {
-                  turnDeviceOn(value);
-                  setState(() {
-                    turnOn = value;
-                  });
-                },
-              ),
-            ),
-            const SizedBox(height: 50),
-            Text.rich(
-              TextSpan(
-                children: [
-                  const TextSpan(
-                    text: 'Temperatura de corte: ',
-                    style: TextStyle(
-                      color: Color(0xfffbe4d8),
-                      fontSize: 25,
-                    ),
-                  ),
-                  TextSpan(
-                    text: tempValue.round().toString(),
-                    style: const TextStyle(
-                      fontSize: 30,
-                      color: Color(0xfffbe4d8),
-                    ),
-                  ),
-                  const TextSpan(
-                    text: '°C',
-                    style: TextStyle(
-                      fontSize: 30,
-                      color: Color(0xfffbe4d8),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                trackHeight: 50.0,
-                thumbColor: const Color(0xfffbe4d8),
-                thumbShape: const RoundSliderThumbShape(
-                  enabledThumbRadius: 0.0,
+              subtitle: Text(
+                tiempos[index].toIso8601String(),
+                style: const TextStyle(
+                  fontSize: 18,
+                  color: Color(0xfffbe4d8),
                 ),
               ),
-              child: Slider(
-                value: tempValue,
-                onChanged: (value) {
-                  setState(() {
-                    tempValue = value;
-                  });
-                },
-                onChangeEnd: (value) {
-                  printLog(value);
-                  sendTemperature(value.round());
-                },
-                min: 10,
-                max: 40,
-              ),
-            ),
-            const SizedBox(height: 50),
-            SizedBox(
-              width: 300,
-              child: TextField(
-                style: const TextStyle(color: Color(0xfffbe4d8)),
-                keyboardType: TextInputType.number,
-                controller: roomTempController,
-                decoration: const InputDecoration(
-                  labelText: 'Introducir temperatura de la habitación',
-                  labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                ),
-                onSubmitted: (value) {
-                  registerActivity(
-                      command(deviceType),
-                      extractSerialNumber(deviceName),
-                      'Se envío de temperatura ambiente: $value°C');
-                  sendRoomTemperature(value);
-                },
-              ),
-            ),
-            const SizedBox(height: 30),
-            Text.rich(
-              TextSpan(
-                children: [
-                  const TextSpan(
-                    text: 'Temperatura actual: ',
-                    style: TextStyle(
-                      color: Color(0xfffbe4d8),
-                      fontSize: 20,
-                    ),
-                  ),
-                  TextSpan(
-                    text: actualTemp,
-                    style: const TextStyle(
-                      color: Color(0xFFdfb6b2),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 30,
-                    ),
-                  ),
-                  const TextSpan(
-                    text: '°C ',
-                    style: TextStyle(
-                      color: Color(0xFFdfb6b2),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 30,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (factoryMode) ...[
-              const SizedBox(height: 10),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    const TextSpan(
-                      text: '¿Mapeo de temperatura realizado? ',
-                      style: TextStyle(
-                        color: Color(0xfffbe4d8),
-                        fontSize: 20,
-                      ),
-                    ),
-                    TextSpan(
-                      text: tempMap ? 'SI' : 'NO',
-                      style: TextStyle(
-                        color: tempMap
-                            ? const Color(0xff854f6c)
-                            : const Color(0xffFF0000),
-                        fontSize: 20,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  registerActivity(
-                      command(deviceType),
-                      extractSerialNumber(deviceName),
-                      'Se inicio el mapeo de temperatura en el equipo');
-                  startTempMap();
-                  showToast('Iniciando mapeo de temperatura');
-                },
-                style: ButtonStyle(
-                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18.0),
-                    ),
-                  ),
-                ),
-                child: const Text('Iniciar mapeo temperatura'),
-              ),
-            ],
-          ],
-        ),
-      ),
+            );
+          }),
     );
   }
 }
 
 //CREDENTIAL Tab //Add thing certificates
+
 class CredsTab extends StatefulWidget {
   const CredsTab({super.key});
   @override
@@ -810,28 +408,28 @@ class CredsTabState extends State<CredsTab> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text.rich(
-                TextSpan(
-                  children: [
-                    const TextSpan(
-                      text: '¿Thing cargada? ',
-                      style: TextStyle(
-                        color: Color(0xfffbe4d8),
-                        fontSize: 20,
-                      ),
-                    ),
-                    TextSpan(
-                      text: awsInit ? 'SI' : 'NO',
-                      style: TextStyle(
-                        color: awsInit
-                            ? const Color(0xff854f6c)
-                            : const Color(0xffFF0000),
-                        fontSize: 20,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              // Text.rich(
+              //   TextSpan(
+              //     children: [
+              //       const TextSpan(
+              //         text: '¿Thing cargada? ',
+              //         style: TextStyle(
+              //           color: Color(0xfffbe4d8),
+              //           fontSize: 20,
+              //         ),
+              //       ),
+              //       TextSpan(
+              //         text: awsInit ? 'SI' : 'NO',
+              //         style: TextStyle(
+              //           color: awsInit
+              //               ? const Color(0xff854f6c)
+              //               : const Color(0xffFF0000),
+              //           fontSize: 20,
+              //         ),
+              //       ),
+              //     ],
+              //   ),
+              // ),
               const SizedBox(height: 30),
               SizedBox(
                 width: 300,
@@ -966,6 +564,7 @@ class CredsTabState extends State<CredsTab> {
     );
   }
 }
+
 //OTA Tab // Update micro
 
 class OtaTab extends StatefulWidget {

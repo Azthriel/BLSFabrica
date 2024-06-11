@@ -473,7 +473,7 @@ class RollcontrolTabState extends State<RollcontrolTab> {
   }
 
   void setMotorSpeed(int speedUp, int speedDown) {
-    String data = '024011_IOT[9]($speedUp#$speedDown)';
+    String data = '024011_IOT[10]($speedUp#$speedDown)';
     printLog(data);
     myDevice.toolsUuid.write(data.codeUnits);
   }
@@ -679,9 +679,9 @@ class RollcontrolTabState extends State<RollcontrolTab> {
               ),
               ElevatedButton(
                   onPressed: () {
-                    workingPosition = 0;
-                    String data = '024011_IOT[7](0%)';
-                    myDevice.toolsUuid.write(data.codeUnits);
+                    setState(() {
+                      workingPosition = 0;
+                    });
                     setRollerConfig(0);
                   },
                   child: const Text('Setear punto 0')),
@@ -944,7 +944,13 @@ class RollcontrolTabState extends State<RollcontrolTab> {
                   ),
                   const Spacer(),
                   ElevatedButton(
-                      onPressed: () => setRollerConfig(1),
+                      onPressed: () {
+                        setRollerConfig(1);
+                        rollerPolarity == '0'
+                            ? rollerPolarity = '1'
+                            : rollerPolarity = '0';
+                        setState(() {});
+                      },
                       child: const Text('Invertir')),
                   const SizedBox(
                     width: 10,

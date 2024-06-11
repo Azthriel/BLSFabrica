@@ -121,6 +121,7 @@ class ScanTabState extends State<ScanTab> {
               'Radiador',
               'Módulo',
               'Roll',
+              'Patito',
             ],
             timeout: const Duration(seconds: 30),
             androidUsesFineLocation: true,
@@ -1875,6 +1876,8 @@ class LoadState extends State<LoadingPage> {
           navigatorKey.currentState?.pushReplacementNamed('/io');
         }else if (deviceType == '024011'){
           navigatorKey.currentState?.pushReplacementNamed('/roller');
+        }else if(deviceType == '019000'){
+          navigatorKey.currentState?.pushReplacementNamed('/patito');
         }
       } else {
         showToast('Error en el dispositivo, intente nuevamente');
