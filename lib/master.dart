@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -17,6 +18,7 @@ import 'package:share/share.dart';
 late List<String> pikachu;
 MyDevice myDevice = MyDevice();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+final dio = Dio();
 late bool factoryMode;
 List<int> calibrationValues = [];
 List<int> regulationValues = [];
@@ -77,6 +79,13 @@ int actualPosition = 0;
 int workingPosition = 0;
 bool rollerMoving = false;
 
+String owner = '';
+String distanceOn = '';
+String distanceOff = '';
+String secAdmDate = '';
+String atDate = '';
+List<String> secondaryAdmins = [];
+
 // Si esta en modo profile.
 const bool xProfileMode = bool.fromEnvironment('dart.vm.profile');
 // Si esta en modo release.
@@ -86,7 +95,7 @@ const bool xDebugMode = !xProfileMode && !xReleaseMode;
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
-String appVersionNumber = '24060600';
+String appVersionNumber = '24062402';
 
 //!------------------------------VERSION NUMBER---------------------------------------
 

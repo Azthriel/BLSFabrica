@@ -2,10 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
+import 'package:biocaldensmartlifefabrica/aws/dynamo/dynamo.dart';
+import 'package:biocaldensmartlifefabrica/aws/dynamo/dynamo_certificates.dart';
 import 'package:biocaldensmartlifefabrica/master.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:http/http.dart' as http;
 
 class CalefactoresTab extends StatefulWidget {
   const CalefactoresTab({super.key});
@@ -103,7 +104,7 @@ class CalefactoresTabState extends State<CalefactoresTab> {
           useMaterial3: true,
         ),
         home: DefaultTabController(
-          length: factoryMode ? 4 : 3,
+          length: factoryMode ? 5 : 4,
           child: PopScope(
             canPop: false,
             onPopInvoked: (didPop) {
@@ -144,6 +145,7 @@ class CalefactoresTabState extends State<CalefactoresTab> {
                   indicatorColor: const Color(0xffdfb6b2),
                   tabs: [
                     const Tab(icon: Icon(Icons.settings)),
+                    const Tab(icon: Icon(Icons.star)),
                     const Tab(icon: Icon(Icons.thermostat)),
                     if (factoryMode) ...[
                       const Tab(icon: Icon(Icons.perm_identity))
@@ -167,6 +169,7 @@ class CalefactoresTabState extends State<CalefactoresTab> {
               body: TabBarView(
                 children: [
                   const ToolsPage(),
+                  const ParamsTab(),
                   const TempTab(),
                   if (factoryMode) ...[const CredsTab()],
                   const OtaTab(),
@@ -255,37 +258,6 @@ class ToolsPageState extends State<ToolsPage> {
                 child: const Text('Enviar'),
               ),
               const SizedBox(height: 20),
-              const Text('Estado del control por distancia en el equipo:',
-                  textAlign: TextAlign.center,
-                  style: (TextStyle(
-                      fontSize: 20.0,
-                      color: Color(0xfffbe4d8),
-                      fontWeight: FontWeight.bold))),
-              Text.rich(
-                TextSpan(
-                    text: distanceControlActive ? 'Activado' : 'Desactivado',
-                    style: (const TextStyle(
-                        fontSize: 20.0,
-                        color: Color(0xFFdfb6b2),
-                        fontWeight: FontWeight.normal))),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              if (distanceControlActive) ...[
-                ElevatedButton(
-                  onPressed: () {
-                    String mailData = '${command(deviceType)}[5](0)';
-                    myDevice.toolsUuid.write(mailData.codeUnits);
-                    registerActivity(command(deviceType), serialNumber,
-                        'Se desactivo el control por distancia');
-                  },
-                  child: const Text(
-                    'Desacticar control por distancia',
-                  ),
-                ),
-              ],
-              const SizedBox(height: 20),
               const Text.rich(
                 TextSpan(
                     text: 'Version de software del modulo IOT:',
@@ -336,6 +308,619 @@ class ToolsPageState extends State<ToolsPage> {
                   ),
                 ),
                 child: const Text('Borrar NVS'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+//PARAMS TAB //Owner, secondary Admins and more
+
+class ParamsTab extends StatefulWidget {
+  const ParamsTab({super.key});
+  @override
+  State<ParamsTab> createState() => ParamsTabState();
+}
+
+class ParamsTabState extends State<ParamsTab> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xff190019),
+      body: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 20),
+              const Text('Estado del control por\n distancia en el equipo:',
+                  textAlign: TextAlign.center,
+                  style: (TextStyle(
+                      fontSize: 20.0,
+                      color: Color(0xfffbe4d8),
+                      fontWeight: FontWeight.bold))),
+              Text.rich(
+                TextSpan(
+                  text: distanceControlActive ? 'Activado' : 'Desactivado',
+                  style: (const TextStyle(
+                      fontSize: 20.0,
+                      color: Color(0xFFdfb6b2),
+                      fontWeight: FontWeight.normal)),
+                ),
+              ),
+              if (distanceControlActive) ...[
+                const SizedBox(
+                  height: 10,
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    String mailData = '${command(deviceType)}[5](0)';
+                    myDevice.toolsUuid.write(mailData.codeUnits);
+                    registerActivity(command(deviceType), serialNumber,
+                        'Se desactivo el control por distancia');
+                    setState(() {
+                      distanceControlActive = false;
+                    });
+                  },
+                  child: const Text(
+                    'Desacticar control por distancia',
+                  ),
+                ),
+              ],
+              const SizedBox(
+                height: 10,
+              ),
+              const Text(
+                'Owner actual del equipo:',
+                textAlign: TextAlign.center,
+                style: (TextStyle(
+                    fontSize: 20.0,
+                    color: Color(0xfffbe4d8),
+                    fontWeight: FontWeight.bold)),
+              ),
+              Text(
+                owner == '' ? 'No hay owner registrado' : owner,
+                textAlign: TextAlign.center,
+                style: (const TextStyle(
+                    fontSize: 20.0,
+                    color: Color(0xFFdfb6b2),
+                    fontWeight: FontWeight.bold)),
+              ),
+              if (owner != '') ...[
+                const SizedBox(
+                  height: 10,
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    putOwner(service, command(deviceType), serialNumber, '');
+                    registerActivity(command(deviceType), serialNumber,
+                        'Se elimino el owner del equipo');
+                    setState(() {
+                      owner = '';
+                    });
+                  },
+                  child: const Text(
+                    'Eliminar Owner',
+                  ),
+                ),
+              ],
+              const SizedBox(
+                height: 20,
+              ),
+              if (secondaryAdmins.isEmpty) ...[
+                const Text(
+                  'No hay administradores \nsecundarios para este equipo',
+                  textAlign: TextAlign.center,
+                  style: (TextStyle(
+                      fontSize: 20.0,
+                      color: Color(0xfffbe4d8),
+                      fontWeight: FontWeight.bold)),
+                )
+              ] else ...[
+                const Text(
+                  'Administradores del equipo:',
+                  textAlign: TextAlign.center,
+                  style: (TextStyle(
+                      fontSize: 20.0,
+                      color: Color(0xfffbe4d8),
+                      fontWeight: FontWeight.bold)),
+                ),
+                for (int i = 0; i < secondaryAdmins.length; i++) ...[
+                  const Divider(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      const CircleAvatar(
+                        radius: 15,
+                        backgroundColor: Color(0xfffbe4d8),
+                        child: Icon(Icons.person, color: Color(0xff854f6c)),
+                      ),
+                      const SizedBox(
+                        width: 5,
+                      ),
+                      Text(
+                        secondaryAdmins[i],
+                        style: (const TextStyle(
+                            fontSize: 20.0,
+                            color: Color(0xFFdfb6b2),
+                            fontWeight: FontWeight.normal)),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: () {
+                          registerActivity(command(deviceType), serialNumber,
+                              'Se elimino el admin ${secondaryAdmins[i]} del equipo');
+                          setState(() {
+                            secondaryAdmins.remove(secondaryAdmins[i]);
+                          });
+                          putSecondaryAdmins(service, command(deviceType),
+                              extractSerialNumber(deviceName), secondaryAdmins);
+                        },
+                        icon: const Icon(Icons.delete, color: Colors.grey),
+                      ),
+                    ],
+                  )
+                ],
+                const Divider(),
+              ],
+              const SizedBox(
+                height: 20,
+              ),
+              const Text(
+                'Vencimiento beneficio\nAdministradores secundarios extra:',
+                textAlign: TextAlign.center,
+                style: (TextStyle(
+                    fontSize: 20.0,
+                    color: Color(0xfffbe4d8),
+                    fontWeight: FontWeight.bold)),
+              ),
+              Text(
+                secAdmDate,
+                textAlign: TextAlign.center,
+                style: (const TextStyle(
+                    fontSize: 20.0,
+                    color: Color(0xFFdfb6b2),
+                    fontWeight: FontWeight.bold)),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      final TextEditingController dateController =
+                          TextEditingController();
+                      return AlertDialog(
+                        title: const Center(
+                          child: Text(
+                            'Especificar nueva fecha de vencimiento:',
+                            style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 300,
+                              child: TextField(
+                                style: const TextStyle(color: Colors.black),
+                                controller: dateController,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  hintText: 'aaaa/mm/dd',
+                                  hintStyle: TextStyle(color: Colors.black),
+                                ),
+                                onChanged: (value) {
+                                  if (value.length > 10) {
+                                    dateController.text =
+                                        value.substring(0, 10);
+                                  } else if (value.length == 4) {
+                                    dateController.text = '$value/';
+                                  } else if (value.length == 7) {
+                                    dateController.text = '$value/';
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              navigatorKey.currentState!.pop();
+                            },
+                            child: const Text('Cancelar'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              registerActivity(
+                                  command(deviceType),
+                                  serialNumber,
+                                  'Se modifico el vencimiento del beneficio "administradores secundarios extras"');
+                              putDate(
+                                  service,
+                                  command(deviceType),
+                                  extractSerialNumber(deviceName),
+                                  dateController.text.trim(),
+                                  false);
+                              setState(() {
+                                secAdmDate = dateController.text.trim();
+                              });
+                              navigatorKey.currentState!.pop();
+                            },
+                            child: const Text('Enviar fecha'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+                child: const Text(
+                  'Modificar fecha',
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              const Text(
+                'Vencimiento beneficio\nAlquiler temporario:',
+                textAlign: TextAlign.center,
+                style: (TextStyle(
+                    fontSize: 20.0,
+                    color: Color(0xfffbe4d8),
+                    fontWeight: FontWeight.bold)),
+              ),
+              Text(
+                atDate,
+                textAlign: TextAlign.center,
+                style: (const TextStyle(
+                    fontSize: 20.0,
+                    color: Color(0xFFdfb6b2),
+                    fontWeight: FontWeight.bold)),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      final TextEditingController dateController =
+                          TextEditingController();
+                      return AlertDialog(
+                        title: const Center(
+                          child: Text(
+                            'Especificar nueva fecha de vencimiento:',
+                            style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 300,
+                              child: TextField(
+                                style: const TextStyle(color: Colors.black),
+                                controller: dateController,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  hintText: 'aaaa/mm/dd',
+                                  hintStyle: TextStyle(color: Colors.black),
+                                ),
+                                onChanged: (value) {
+                                  if (value.length > 10) {
+                                    dateController.text =
+                                        value.substring(0, 10);
+                                  } else if (value.length == 4) {
+                                    dateController.text = '$value/';
+                                  } else if (value.length == 7) {
+                                    dateController.text = '$value/';
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              navigatorKey.currentState!.pop();
+                            },
+                            child: const Text('Cancelar'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              registerActivity(
+                                  command(deviceType),
+                                  serialNumber,
+                                  'Se modifico el vencimiento del beneficio "alquiler temporario"');
+                              putDate(
+                                  service,
+                                  command(deviceType),
+                                  extractSerialNumber(deviceName),
+                                  dateController.text.trim(),
+                                  true);
+                              setState(() {
+                                atDate = dateController.text.trim();
+                              });
+                              navigatorKey.currentState!.pop();
+                            },
+                            child: const Text('Enviar fecha'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+                child: const Text(
+                  'Modificar fecha',
+                ),
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+//CONTROL TAB // On Off y set temperatura
+
+class TempTab extends StatefulWidget {
+  const TempTab({super.key});
+  @override
+  TempTabState createState() => TempTabState();
+}
+
+class TempTabState extends State<TempTab> {
+  final TextEditingController roomTempController = TextEditingController();
+  final TextEditingController distanceOnController =
+      TextEditingController(text: distanceOn);
+  final TextEditingController distanceOffController =
+      TextEditingController(text: distanceOff);
+
+  bool ignite = false;
+
+  @override
+  void initState() {
+    super.initState();
+    printLog('Valor temp: $tempValue');
+    printLog('¿Encendido? $turnOn');
+    subscribeTrueStatus();
+  }
+
+  void subscribeTrueStatus() async {
+    printLog('Me subscribo a vars');
+    await myDevice.varsUuid.setNotifyValue(true);
+
+    final trueStatusSub =
+        myDevice.varsUuid.onValueReceived.listen((List<int> status) {
+      var parts = utf8.decode(status).split(':');
+      // printLog(parts);
+      setState(() {
+        trueStatus = parts[0] == '1';
+        actualTemp = parts[1];
+      });
+    });
+
+    myDevice.device.cancelWhenDisconnected(trueStatusSub);
+  }
+
+  void sendTemperature(int temp) {
+    String data = '${command(deviceType)}[7]($temp)';
+    myDevice.toolsUuid.write(data.codeUnits);
+  }
+
+  void turnDeviceOn(bool on) {
+    int fun = on ? 1 : 0;
+    String data = '${command(deviceType)}[11]($fun)';
+    myDevice.toolsUuid.write(data.codeUnits);
+  }
+
+  void sendRoomTemperature(String temp) {
+    String data = '${command(deviceType)}[8]($temp)';
+    myDevice.toolsUuid.write(data.codeUnits);
+  }
+
+  void startTempMap() {
+    String data = '${command(deviceType)}[12](0)';
+    myDevice.toolsUuid.write(data.codeUnits);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xff190019),
+      body: Center(
+          child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text.rich(
+              TextSpan(
+                text: turnOn
+                    ? trueStatus
+                        ? 'Calentando'
+                        : 'Encendido'
+                    : 'Apagado',
+                style: TextStyle(
+                    color: turnOn
+                        ? trueStatus
+                            ? Colors.amber[600]
+                            : Colors.green
+                        : Colors.red,
+                    fontSize: 30),
+              ),
+            ),
+            const SizedBox(height: 30),
+            Transform.scale(
+              scale: 3.0,
+              child: Switch(
+                activeColor: const Color(0xfffbe4d8),
+                activeTrackColor: const Color(0xff854f6c),
+                inactiveThumbColor: const Color(0xff854f6c),
+                inactiveTrackColor: const Color(0xfffbe4d8),
+                value: turnOn,
+                onChanged: (value) {
+                  turnDeviceOn(value);
+                  setState(() {
+                    turnOn = value;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(height: 50),
+            Text.rich(
+              TextSpan(
+                children: [
+                  const TextSpan(
+                    text: 'Temperatura de corte: ',
+                    style: TextStyle(
+                      color: Color(0xfffbe4d8),
+                      fontSize: 25,
+                    ),
+                  ),
+                  TextSpan(
+                    text: tempValue.round().toString(),
+                    style: const TextStyle(
+                      fontSize: 30,
+                      color: Color(0xfffbe4d8),
+                    ),
+                  ),
+                  const TextSpan(
+                    text: '°C',
+                    style: TextStyle(
+                      fontSize: 30,
+                      color: Color(0xfffbe4d8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 50.0,
+                thumbColor: const Color(0xfffbe4d8),
+                thumbShape: const RoundSliderThumbShape(
+                  enabledThumbRadius: 0.0,
+                ),
+              ),
+              child: Slider(
+                value: tempValue,
+                onChanged: (value) {
+                  setState(() {
+                    tempValue = value;
+                  });
+                },
+                onChangeEnd: (value) {
+                  printLog(value);
+                  sendTemperature(value.round());
+                },
+                min: 10,
+                max: 40,
+              ),
+            ),
+            const SizedBox(height: 30),
+            SizedBox(
+              width: 300,
+              child: TextField(
+                style: const TextStyle(color: Color(0xfffbe4d8)),
+                keyboardType: TextInputType.number,
+                controller: roomTempController,
+                decoration: const InputDecoration(
+                  labelText: 'Introducir temperatura de la habitación',
+                  labelStyle: TextStyle(color: Color(0xfffbe4d8)),
+                ),
+                onSubmitted: (value) {
+                  registerActivity(
+                      command(deviceType),
+                      extractSerialNumber(deviceName),
+                      'Se envío de temperatura ambiente: $value°C');
+                  sendRoomTemperature(value);
+                },
+              ),
+            ),
+            const SizedBox(height: 30),
+            Text.rich(
+              TextSpan(
+                children: [
+                  const TextSpan(
+                    text: 'Temperatura actual: ',
+                    style: TextStyle(
+                      color: Color(0xfffbe4d8),
+                      fontSize: 20,
+                    ),
+                  ),
+                  TextSpan(
+                    text: actualTemp,
+                    style: const TextStyle(
+                      color: Color(0xFFdfb6b2),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 30,
+                    ),
+                  ),
+                  const TextSpan(
+                    text: '°C ',
+                    style: TextStyle(
+                      color: Color(0xFFdfb6b2),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 30,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (factoryMode) ...[
+              const SizedBox(height: 10),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    const TextSpan(
+                      text: 'Mapeo de temperatura:\n',
+                      style: TextStyle(
+                        color: Color(0xfffbe4d8),
+                        fontSize: 20,
+                      ),
+                    ),
+                    TextSpan(
+                      text: tempMap ? 'REALIZADO' : 'NO REALIZADO',
+                      style: TextStyle(
+                        color: tempMap
+                            ? const Color(0xff854f6c)
+                            : const Color(0xffFF0000),
+                        fontSize: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  registerActivity(
+                      command(deviceType),
+                      extractSerialNumber(deviceName),
+                      'Se inicio el mapeo de temperatura en el equipo');
+                  startTempMap();
+                  showToast('Iniciando mapeo de temperatura');
+                },
+                style: ButtonStyle(
+                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18.0),
+                    ),
+                  ),
+                ),
+                child: const Text('Iniciar mapeo temperatura'),
               ),
               const SizedBox(
                 height: 10,
@@ -449,10 +1034,10 @@ class ToolsPageState extends State<ToolsPage> {
                 ),
                 child: const Text('Configurar ciclado'),
               ),
-              const SizedBox(
-                height: 20,
-              ),
               if (deviceType == '027000') ...[
+                const SizedBox(
+                  height: 10,
+                ),
                 ElevatedButton(
                   onPressed: () {
                     showDialog(
@@ -525,261 +1110,114 @@ class ToolsPageState extends State<ToolsPage> {
                     textAlign: TextAlign.center,
                   ),
                 ),
-              ]
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-//CONTROL TAB // On Off y set temperatura
-
-class TempTab extends StatefulWidget {
-  const TempTab({super.key});
-  @override
-  TempTabState createState() => TempTabState();
-}
-
-class TempTabState extends State<TempTab> {
-  final TextEditingController roomTempController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    printLog('Valor temp: $tempValue');
-    printLog('¿Encendido? $turnOn');
-    subscribeTrueStatus();
-  }
-
-  void subscribeTrueStatus() async {
-    printLog('Me subscribo a vars');
-    await myDevice.varsUuid.setNotifyValue(true);
-
-    final trueStatusSub =
-        myDevice.varsUuid.onValueReceived.listen((List<int> status) {
-      var parts = utf8.decode(status).split(':');
-      printLog(parts);
-      setState(() {
-        trueStatus = parts[0] == '1';
-        actualTemp = parts[1];
-      });
-    });
-
-    myDevice.device.cancelWhenDisconnected(trueStatusSub);
-  }
-
-  void sendTemperature(int temp) {
-    String data = '${command(deviceType)}[7]($temp)';
-    myDevice.toolsUuid.write(data.codeUnits);
-  }
-
-  void turnDeviceOn(bool on) {
-    int fun = on ? 1 : 0;
-    String data = '${command(deviceType)}[11]($fun)';
-    myDevice.toolsUuid.write(data.codeUnits);
-  }
-
-  void sendRoomTemperature(String temp) {
-    String data = '${command(deviceType)}[8]($temp)';
-    myDevice.toolsUuid.write(data.codeUnits);
-  }
-
-  void startTempMap() {
-    String data = '${command(deviceType)}[12](0)';
-    myDevice.toolsUuid.write(data.codeUnits);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xff190019),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text.rich(
-              TextSpan(
-                text: turnOn
-                    ? trueStatus
-                        ? 'Calentando'
-                        : 'Encendido'
-                    : 'Apagado',
+                const SizedBox(
+                  height: 10,
+                ),
+                GestureDetector(
+                  onLongPressStart: (LongPressStartDetails a) async {
+                    setState(() {
+                      ignite = true;
+                    });
+                    while (ignite) {
+                      await Future.delayed(const Duration(milliseconds: 500));
+                      if (!ignite) break;
+                      String data = '027000_IOT[15](1)';
+                      myDevice.toolsUuid.write(data.codeUnits);
+                      printLog(data);
+                    }
+                  },
+                  onLongPressEnd: (LongPressEndDetails a) {
+                    setState(() {
+                      ignite = false;
+                    });
+                    String data = '027000_IOT[15](0)';
+                    myDevice.toolsUuid.write(data.codeUnits);
+                    printLog(data);
+                  },
+                  child: ElevatedButton(
+                    onPressed: () {},
+                    child: const Text('Chispero'),
+                  ),
+                ),
+              ],
+              const SizedBox(
+                height: 10,
+              ),
+              const Text(
+                'Distancias de control: ',
                 style: TextStyle(
-                    color: turnOn
-                        ? trueStatus
-                            ? Colors.amber[600]
-                            : Colors.green
-                        : Colors.red,
-                    fontSize: 30),
-              ),
-            ),
-            const SizedBox(height: 30),
-            Transform.scale(
-              scale: 3.0,
-              child: Switch(
-                activeColor: const Color(0xfffbe4d8),
-                activeTrackColor: const Color(0xff854f6c),
-                inactiveThumbColor: const Color(0xff854f6c),
-                inactiveTrackColor: const Color(0xfffbe4d8),
-                value: turnOn,
-                onChanged: (value) {
-                  turnDeviceOn(value);
-                  setState(() {
-                    turnOn = value;
-                  });
-                },
-              ),
-            ),
-            const SizedBox(height: 50),
-            Text.rich(
-              TextSpan(
-                children: [
-                  const TextSpan(
-                    text: 'Temperatura de corte: ',
-                    style: TextStyle(
-                      color: Color(0xfffbe4d8),
-                      fontSize: 25,
-                    ),
-                  ),
-                  TextSpan(
-                    text: tempValue.round().toString(),
-                    style: const TextStyle(
-                      fontSize: 30,
-                      color: Color(0xfffbe4d8),
-                    ),
-                  ),
-                  const TextSpan(
-                    text: '°C',
-                    style: TextStyle(
-                      fontSize: 30,
-                      color: Color(0xfffbe4d8),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                trackHeight: 50.0,
-                thumbColor: const Color(0xfffbe4d8),
-                thumbShape: const RoundSliderThumbShape(
-                  enabledThumbRadius: 0.0,
+                  color: Color(0xfffbe4d8),
+                  fontSize: 20,
                 ),
               ),
-              child: Slider(
-                value: tempValue,
-                onChanged: (value) {
-                  setState(() {
-                    tempValue = value;
-                  });
-                },
-                onChangeEnd: (value) {
-                  printLog(value);
-                  sendTemperature(value.round());
-                },
-                min: 10,
-                max: 40,
-              ),
-            ),
-            const SizedBox(height: 50),
-            SizedBox(
-              width: 300,
-              child: TextField(
-                style: const TextStyle(color: Color(0xfffbe4d8)),
-                keyboardType: TextInputType.number,
-                controller: roomTempController,
-                decoration: const InputDecoration(
-                  labelText: 'Introducir temperatura de la habitación',
-                  labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                ),
-                onSubmitted: (value) {
-                  registerActivity(
-                      command(deviceType),
-                      extractSerialNumber(deviceName),
-                      'Se envío de temperatura ambiente: $value°C');
-                  sendRoomTemperature(value);
-                },
-              ),
-            ),
-            const SizedBox(height: 30),
-            Text.rich(
-              TextSpan(
-                children: [
-                  const TextSpan(
-                    text: 'Temperatura actual: ',
-                    style: TextStyle(
-                      color: Color(0xfffbe4d8),
-                      fontSize: 20,
-                    ),
+              SizedBox(
+                width: 300,
+                child: TextField(
+                  style: const TextStyle(
+                    color: Color(0xFFdfb6b2),
+                    fontWeight: FontWeight.bold,
                   ),
-                  TextSpan(
-                    text: actualTemp,
-                    style: const TextStyle(
-                      color: Color(0xFFdfb6b2),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 30,
-                    ),
+                  keyboardType: TextInputType.number,
+                  controller: distanceOnController,
+                  decoration: const InputDecoration(
+                    labelText: 'Distancia de encendido:',
+                    labelStyle: TextStyle(color: Color(0xfffbe4d8)),
+                    suffixText: 'Metros',
+                    suffixStyle: TextStyle(color: Color(0xfffbe4d8)),
                   ),
-                  const TextSpan(
-                    text: '°C ',
-                    style: TextStyle(
-                      color: Color(0xFFdfb6b2),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 30,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (factoryMode) ...[
-              const SizedBox(height: 10),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    const TextSpan(
-                      text: '¿Mapeo de temperatura realizado? ',
-                      style: TextStyle(
-                        color: Color(0xfffbe4d8),
-                        fontSize: 20,
-                      ),
-                    ),
-                    TextSpan(
-                      text: tempMap ? 'SI' : 'NO',
-                      style: TextStyle(
-                        color: tempMap
-                            ? const Color(0xff854f6c)
-                            : const Color(0xffFF0000),
-                        fontSize: 20,
-                      ),
-                    ),
-                  ],
+                  onSubmitted: (value) {
+                    if (int.parse(value) <= 5000 && int.parse(value) >= 3000) {
+                      registerActivity(
+                          command(deviceType),
+                          extractSerialNumber(deviceName),
+                          'Se modifico la distancia de encendido');
+                      putDistanceOn(service, command(deviceType),
+                          extractSerialNumber(deviceName), value);
+                    } else {
+                      showToast('Parametros no permitidos');
+                    }
+                  },
                 ),
               ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  registerActivity(
-                      command(deviceType),
-                      extractSerialNumber(deviceName),
-                      'Se inicio el mapeo de temperatura en el equipo');
-                  startTempMap();
-                  showToast('Iniciando mapeo de temperatura');
-                },
-                style: ButtonStyle(
-                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18.0),
-                    ),
+              const SizedBox(
+                height: 10,
+              ),
+              SizedBox(
+                width: 300,
+                child: TextField(
+                  style: const TextStyle(
+                    color: Color(0xFFdfb6b2),
+                    fontWeight: FontWeight.bold,
                   ),
+                  keyboardType: TextInputType.number,
+                  controller: distanceOffController,
+                  decoration: const InputDecoration(
+                    labelText: 'Distancia de apagado:',
+                    labelStyle: TextStyle(color: Color(0xfffbe4d8)),
+                    suffixText: 'Metros',
+                    suffixStyle: TextStyle(color: Color(0xfffbe4d8)),
+                  ),
+                  onSubmitted: (value) {
+                    if (int.parse(value) <= 300 && int.parse(value) >= 100) {
+                      registerActivity(
+                          command(deviceType),
+                          extractSerialNumber(deviceName),
+                          'Se modifico la distancia de apagado');
+                      putDistanceOff(service, command(deviceType),
+                          extractSerialNumber(deviceName), value);
+                    } else {
+                      showToast('Parametros no permitidos');
+                    }
+                  },
                 ),
-                child: const Text('Iniciar mapeo temperatura'),
+              ),
+              const SizedBox(
+                height: 30,
               ),
             ],
           ],
         ),
-      ),
+      )),
     );
   }
 }
@@ -1120,8 +1558,8 @@ class OtaTabState extends State<OtaTab> {
           await file.delete();
         }
 
-        var req = await http.get(Uri.parse(url));
-        var bytes = req.body.codeUnits;
+        var req = await dio.get(url);
+        var bytes = req.data.toString().codeUnits;
 
         await file.writeAsBytes(bytes);
 

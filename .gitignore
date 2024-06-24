@@ -45,4 +45,5 @@ app.*.map.json
 /android/app/release
 
 lib/firebase_options.dart
-/lib/mqtt/mqtt_certificates.dart
+/lib/aws/mqtt/mqtt_certificates.dart
+/lib/aws/dynamo/dynamo_certificates.dart

@@ -2,15 +2,17 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:biocaldensmartlifefabrica/aws/dynamo/dynamo.dart';
+import 'package:biocaldensmartlifefabrica/aws/dynamo/dynamo_certificates.dart';
 import 'package:biocaldensmartlifefabrica/master.dart';
-import 'package:biocaldensmartlifefabrica/mqtt/mqtt.dart';
+import 'package:biocaldensmartlifefabrica/aws/mqtt/mqtt.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:intl/intl.dart';
-import 'package:http/http.dart' as http;
+// import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share/share.dart';
@@ -62,7 +64,7 @@ class MenuPageState extends State<MenuPage> {
                   icon: Icon(Icons.webhook_outlined),
                 ),
                 Tab(
-                  icon: Icon(Icons.thermostat),
+                  icon: Icon(Icons.thermostat_auto),
                 ),
                 Tab(icon: Icon(Icons.send)),
               ],
@@ -332,15 +334,14 @@ class ControlTabState extends State<ControlTab> {
     String status = stateSell ? 'Si' : 'No';
     const String url =
         'https://script.google.com/macros/s/AKfycbyJw-peLVNGfSwb9vi9YWTbYysBR4oc2_Bz8cReB1oMOLrRrE4kK9lIb0hhRzriAHWs/exec';
-    final Uri uri = Uri.parse(url).replace(queryParameters: {
+
+    final response = await dio.get(url, queryParameters: {
       'productCode': productCode,
       'serialNumber': serialNumber,
       'status': status,
       'legajo': legajoConectado,
       'comment': comController.text,
     });
-
-    final response = await http.get(uri);
     if (response.statusCode == 200) {
       printLog('Si llego');
       comController.clear();
@@ -467,9 +468,11 @@ class ToolsAWSState extends State<ToolsAWS> {
   final TextEditingController serialNumberController = TextEditingController();
   final TextEditingController contentController = TextEditingController();
   String productCode = '';
-  String command = '';
+  String commandText = '';
   int key = 0;
   List<String> content = [];
+  bool tools = false;
+  bool config = false;
 
   String hintAWS(String cmd) {
     switch (cmd) {
@@ -594,6 +597,8 @@ class ToolsAWSState extends State<ToolsAWS> {
                                 notifier.updateData(
                                     'Esperando respuesta del esp...');
                               });
+                              // printLog(
+                              //     "',:v : ${serialNumberController.text.trim()}");
                             },
                             icon: const Icon(
                               Icons.delete_forever,
@@ -601,169 +606,15 @@ class ToolsAWSState extends State<ToolsAWS> {
                             ),
                           ),
                         ),
+                        onSubmitted: (value) {
+                          setState(() {
+                            queryItems(service, productCode,
+                                serialNumberController.text.trim());
+                          });
+                        },
                       ),
                     ),
                     const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 115,
-                          child: DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(
-                              labelText: 'Comando:',
-                              labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                              hintStyle: TextStyle(color: Color(0xfffbe4d8)),
-                              // fillColor: Color(0xfffbe4d8),
-                            ),
-                            dropdownColor: const Color(0xff190019),
-                            items: <String>['0', '2', '4', '5', '6']
-                                .map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value,
-                                    style: const TextStyle(
-                                      color: Color(0xfffbe4d8),
-                                    )),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              setState(() {
-                                command = value!;
-                                contentController.clear();
-                              });
-                              printLog(contentType(command));
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 20),
-                        SizedBox(
-                          width: 200,
-                          child: TextField(
-                            style: const TextStyle(color: Color(0xfffbe4d8)),
-                            controller: contentController,
-                            maxLines: null,
-                            keyboardType: contentType(command),
-                            decoration: InputDecoration(
-                              labelText: 'Contenido:',
-                              hintText: hintAWS(command),
-                              labelStyle:
-                                  const TextStyle(color: Color(0xfffbe4d8)),
-                              hintStyle:
-                                  const TextStyle(color: Color(0xfffbe4d8)),
-                              suffixIcon: command == '6'
-                                  ? IconButton(
-                                      onPressed: () {
-                                        showDialog<void>(
-                                          context: context,
-                                          barrierDismissible: true,
-                                          builder: (BuildContext context) {
-                                            return SimpleDialog(
-                                              title: const Text(
-                                                  '¿Que vas a envíar?'),
-                                              children: <Widget>[
-                                                SimpleDialogOption(
-                                                  onPressed: () {
-                                                    Navigator.of(context).pop();
-                                                    contentController.clear();
-                                                    key = 0;
-                                                    printLog(
-                                                        'Amazon CA seleccionada');
-                                                    setState(() {});
-                                                  },
-                                                  child:
-                                                      const Text('Amazon CA'),
-                                                ),
-                                                SimpleDialogOption(
-                                                  onPressed: () {
-                                                    Navigator.of(context).pop();
-                                                    contentController.clear();
-                                                    key = 1;
-                                                    printLog(
-                                                        'Device Cert. seleccionada');
-                                                    setState(() {});
-                                                  },
-                                                  child: const Text(
-                                                      'Device Cert.'),
-                                                ),
-                                                SimpleDialogOption(
-                                                  onPressed: () {
-                                                    Navigator.of(context).pop();
-                                                    contentController.clear();
-                                                    key = 2;
-                                                    printLog(
-                                                        'Private key seleccionada');
-                                                    setState(() {});
-                                                  },
-                                                  child:
-                                                      const Text('Private key'),
-                                                ),
-                                              ],
-                                            );
-                                          },
-                                        );
-                                      },
-                                      icon: const Icon(
-                                        Icons.paste,
-                                        color: Color(0xfffbe4d8),
-                                      ),
-                                    )
-                                  : null,
-                            ),
-                            onChanged: (value) {
-                              if (command == '6') {
-                                content = contentController.text.split('\n');
-                                contentController.text = 'Cargado';
-                              }
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    ElevatedButton(
-                        onPressed: () {
-                          String topic =
-                              'tools/$productCode/${serialNumberController.text.trim()}';
-                          subToTopicMQTT(topic);
-                          listenToTopics();
-                          if (command == '6') {
-                            for (var line in content) {
-                              String msg = jsonEncode(
-                                  {'cmd': command, 'content': '$key#$line'});
-                              printLog(msg);
-
-                              sendMessagemqtt(topic, msg);
-                            }
-                            String fun = key == 0
-                                ? 'Amazon CA'
-                                : key == 1
-                                    ? 'Device cert.'
-                                    : 'Private Key';
-                            registerActivity(
-                                productCode,
-                                serialNumberController.text.trim(),
-                                'Se envio via mqtt un $fun');
-                            contentController.clear();
-                          } else {
-                            String msg = jsonEncode({
-                              'cmd': command,
-                              'content': contentController.text.trim()
-                            });
-                            registerActivity(
-                                productCode,
-                                serialNumberController.text.trim(),
-                                'Se envio via mqtt: $msg');
-                            sendMessagemqtt(topic, msg);
-                            contentController.clear();
-                          }
-                        },
-                        child: const Text('Enviar comando')),
-                    const SizedBox(
-                      height: 10,
-                    ),
                     ElevatedButton(
                         onPressed: () {
                           String topic =
@@ -782,42 +633,563 @@ class ToolsAWSState extends State<ToolsAWS> {
                     const SizedBox(
                       height: 10,
                     ),
-                    Container(
-                      width: 300,
-                      height: 300,
-                      decoration: BoxDecoration(
-                        color: const Color(0xff2b124c),
-                        borderRadius: BorderRadius.circular(20),
-                        border: const Border(
-                          bottom:
-                              BorderSide(color: Color(0xff854f6c), width: 5),
-                          right: BorderSide(color: Color(0xff854f6c), width: 5),
-                          left: BorderSide(color: Color(0xff854f6c), width: 5),
-                          top: BorderSide(color: Color(0xff854f6c), width: 5),
-                        ),
-                      ),
-                      child: Column(
+                    if (!tools && !config) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          const Text(
-                            'Respuesta:',
-                            style: TextStyle(
-                                color: Color(0xFFdfb6b2),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 30),
-                            textAlign: TextAlign.center,
-                          ),
+                          ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  config = true;
+                                });
+                              },
+                              child: const Text('Parametros')),
+                          ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  tools = true;
+                                });
+                              },
+                              child: const Text('Comandos')),
+                        ],
+                      ),
+                    ],
+                    if (config) ...[
+                      if (productCode != '' &&
+                          serialNumberController.text != '') ...[
+                        const Text(
+                          'Owner actual del equipo:',
+                          textAlign: TextAlign.center,
+                          style: (TextStyle(
+                              fontSize: 20.0,
+                              color: Color(0xfffbe4d8),
+                              fontWeight: FontWeight.bold)),
+                        ),
+                        Text(
+                          owner == '' ? 'No hay owner registrado' : owner,
+                          textAlign: TextAlign.center,
+                          style: (const TextStyle(
+                              fontSize: 20.0,
+                              color: Color(0xFFdfb6b2),
+                              fontWeight: FontWeight.bold)),
+                        ),
+                        if (owner != '') ...[
                           const SizedBox(
-                            height: 20,
+                            height: 10,
                           ),
-                          Text(
-                            textToShow,
-                            style: const TextStyle(
-                                color: Color(0xFFdfb6b2), fontSize: 30),
+                          ElevatedButton(
+                            onPressed: () {
+                              putOwner(service, command(deviceType),
+                                  serialNumber, '');
+                              registerActivity(
+                                  command(deviceType),
+                                  serialNumber,
+                                  'Se elimino el owner del equipo');
+                              setState(() {
+                                owner = '';
+                              });
+                            },
+                            child: const Text(
+                              'Eliminar Owner',
+                            ),
+                          ),
+                        ],
+                        const SizedBox(
+                          height: 20,
+                        ),
+                        if (secondaryAdmins.isEmpty) ...[
+                          const Text(
+                            'No hay administradores \nsecundarios para este equipo',
                             textAlign: TextAlign.center,
+                            style: (TextStyle(
+                                fontSize: 20.0,
+                                color: Color(0xfffbe4d8),
+                                fontWeight: FontWeight.bold)),
+                          )
+                        ] else ...[
+                          const Text(
+                            'Administradores del equipo:',
+                            textAlign: TextAlign.center,
+                            style: (TextStyle(
+                                fontSize: 20.0,
+                                color: Color(0xfffbe4d8),
+                                fontWeight: FontWeight.bold)),
+                          ),
+                          for (int i = 0; i < secondaryAdmins.length; i++) ...[
+                            const Divider(),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                const CircleAvatar(
+                                  radius: 15,
+                                  backgroundColor: Color(0xfffbe4d8),
+                                  child: Icon(Icons.person,
+                                      color: Color(0xff854f6c)),
+                                ),
+                                const SizedBox(
+                                  width: 5,
+                                ),
+                                Text(
+                                  secondaryAdmins[i],
+                                  style: (const TextStyle(
+                                      fontSize: 20.0,
+                                      color: Color(0xFFdfb6b2),
+                                      fontWeight: FontWeight.normal)),
+                                ),
+                                const Spacer(),
+                                IconButton(
+                                  onPressed: () {
+                                    registerActivity(
+                                        command(deviceType),
+                                        serialNumber,
+                                        'Se elimino el admin ${secondaryAdmins[i]} del equipo');
+                                    setState(() {
+                                      secondaryAdmins
+                                          .remove(secondaryAdmins[i]);
+                                    });
+                                    putSecondaryAdmins(
+                                        service,
+                                        command(deviceType),
+                                        extractSerialNumber(deviceName),
+                                        secondaryAdmins);
+                                  },
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.grey),
+                                ),
+                              ],
+                            )
+                          ],
+                          const Divider(),
+                        ],
+                        const SizedBox(
+                          height: 20,
+                        ),
+                        const Text(
+                          'Vencimiento beneficio\nAdministradores secundarios extra:',
+                          textAlign: TextAlign.center,
+                          style: (TextStyle(
+                              fontSize: 20.0,
+                              color: Color(0xfffbe4d8),
+                              fontWeight: FontWeight.bold)),
+                        ),
+                        Text(
+                          secAdmDate,
+                          textAlign: TextAlign.center,
+                          style: (const TextStyle(
+                              fontSize: 20.0,
+                              color: Color(0xFFdfb6b2),
+                              fontWeight: FontWeight.bold)),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                final TextEditingController dateController =
+                                    TextEditingController();
+                                return AlertDialog(
+                                  title: const Center(
+                                    child: Text(
+                                      'Especificar nueva fecha de vencimiento:',
+                                      style: TextStyle(
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  content: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SizedBox(
+                                        width: 300,
+                                        child: TextField(
+                                          style: const TextStyle(
+                                              color: Colors.black),
+                                          controller: dateController,
+                                          keyboardType: TextInputType.number,
+                                          decoration: const InputDecoration(
+                                            hintText: 'aaaa/mm/dd',
+                                            hintStyle:
+                                                TextStyle(color: Colors.black),
+                                          ),
+                                          onChanged: (value) {
+                                            if (value.length > 10) {
+                                              dateController.text =
+                                                  value.substring(0, 10);
+                                            } else if (value.length == 4) {
+                                              dateController.text = '$value/';
+                                            } else if (value.length == 7) {
+                                              dateController.text = '$value/';
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        navigatorKey.currentState!.pop();
+                                      },
+                                      child: const Text('Cancelar'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        registerActivity(
+                                            command(deviceType),
+                                            serialNumber,
+                                            'Se modifico el vencimiento del beneficio "administradores secundarios extras"');
+                                        putDate(
+                                            service,
+                                            command(deviceType),
+                                            extractSerialNumber(deviceName),
+                                            dateController.text.trim(),
+                                            false);
+                                        setState(() {
+                                          secAdmDate =
+                                              dateController.text.trim();
+                                        });
+                                        navigatorKey.currentState!.pop();
+                                      },
+                                      child: const Text('Enviar fecha'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                          child: const Text(
+                            'Modificar fecha',
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        const Text(
+                          'Vencimiento beneficio\nAlquiler temporario:',
+                          textAlign: TextAlign.center,
+                          style: (TextStyle(
+                              fontSize: 20.0,
+                              color: Color(0xfffbe4d8),
+                              fontWeight: FontWeight.bold)),
+                        ),
+                        Text(
+                          atDate,
+                          textAlign: TextAlign.center,
+                          style: (const TextStyle(
+                              fontSize: 20.0,
+                              color: Color(0xFFdfb6b2),
+                              fontWeight: FontWeight.bold)),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                final TextEditingController dateController =
+                                    TextEditingController();
+                                return AlertDialog(
+                                  title: const Center(
+                                    child: Text(
+                                      'Especificar nueva fecha de vencimiento:',
+                                      style: TextStyle(
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  content: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SizedBox(
+                                        width: 300,
+                                        child: TextField(
+                                          style: const TextStyle(
+                                              color: Colors.black),
+                                          controller: dateController,
+                                          keyboardType: TextInputType.number,
+                                          decoration: const InputDecoration(
+                                            hintText: 'aaaa/mm/dd',
+                                            hintStyle:
+                                                TextStyle(color: Colors.black),
+                                          ),
+                                          onChanged: (value) {
+                                            if (value.length > 10) {
+                                              dateController.text =
+                                                  value.substring(0, 10);
+                                            } else if (value.length == 4) {
+                                              dateController.text = '$value/';
+                                            } else if (value.length == 7) {
+                                              dateController.text = '$value/';
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        navigatorKey.currentState!.pop();
+                                      },
+                                      child: const Text('Cancelar'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        registerActivity(
+                                            command(deviceType),
+                                            serialNumber,
+                                            'Se modifico el vencimiento del beneficio "alquiler temporario"');
+                                        putDate(
+                                            service,
+                                            command(deviceType),
+                                            extractSerialNumber(deviceName),
+                                            dateController.text.trim(),
+                                            true);
+                                        setState(() {
+                                          atDate = dateController.text.trim();
+                                        });
+                                        navigatorKey.currentState!.pop();
+                                      },
+                                      child: const Text('Enviar fecha'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                          child: const Text(
+                            'Modificar fecha',
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 20,
+                        ),
+                      ] else ...[
+                        const CircularProgressIndicator(),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        const Text(
+                          'Esperando a que se\n seleccione un equipo',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: Color(0xfffbe4d8),
+                          ),
+                        )
+                      ]
+                    ],
+                    if (tools) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 115,
+                            child: DropdownButtonFormField<String>(
+                              decoration: const InputDecoration(
+                                labelText: 'Comando:',
+                                labelStyle: TextStyle(color: Color(0xfffbe4d8)),
+                                hintStyle: TextStyle(color: Color(0xfffbe4d8)),
+                                // fillColor: Color(0xfffbe4d8),
+                              ),
+                              dropdownColor: const Color(0xff190019),
+                              items: <String>[
+                                '0',
+                                '2',
+                                '4',
+                                '5',
+                                '6'
+                              ].map<DropdownMenuItem<String>>((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value,
+                                      style: const TextStyle(
+                                        color: Color(0xfffbe4d8),
+                                      )),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  commandText = value!;
+                                  contentController.clear();
+                                });
+                                printLog(contentType(commandText));
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                          SizedBox(
+                            width: 200,
+                            child: TextField(
+                              style: const TextStyle(color: Color(0xfffbe4d8)),
+                              controller: contentController,
+                              maxLines: null,
+                              keyboardType: contentType(commandText),
+                              decoration: InputDecoration(
+                                labelText: 'Contenido:',
+                                hintText: hintAWS(commandText),
+                                labelStyle:
+                                    const TextStyle(color: Color(0xfffbe4d8)),
+                                hintStyle:
+                                    const TextStyle(color: Color(0xfffbe4d8)),
+                                suffixIcon: commandText == '6'
+                                    ? IconButton(
+                                        onPressed: () {
+                                          showDialog<void>(
+                                            context: context,
+                                            barrierDismissible: true,
+                                            builder: (BuildContext context) {
+                                              return SimpleDialog(
+                                                title: const Text(
+                                                    '¿Que vas a envíar?'),
+                                                children: <Widget>[
+                                                  SimpleDialogOption(
+                                                    onPressed: () {
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                      contentController.clear();
+                                                      key = 0;
+                                                      printLog(
+                                                          'Amazon CA seleccionada');
+                                                      setState(() {});
+                                                    },
+                                                    child:
+                                                        const Text('Amazon CA'),
+                                                  ),
+                                                  SimpleDialogOption(
+                                                    onPressed: () {
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                      contentController.clear();
+                                                      key = 1;
+                                                      printLog(
+                                                          'Device Cert. seleccionada');
+                                                      setState(() {});
+                                                    },
+                                                    child: const Text(
+                                                        'Device Cert.'),
+                                                  ),
+                                                  SimpleDialogOption(
+                                                    onPressed: () {
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                      contentController.clear();
+                                                      key = 2;
+                                                      printLog(
+                                                          'Private key seleccionada');
+                                                      setState(() {});
+                                                    },
+                                                    child: const Text(
+                                                        'Private key'),
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                          );
+                                        },
+                                        icon: const Icon(
+                                          Icons.paste,
+                                          color: Color(0xfffbe4d8),
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                              onChanged: (value) {
+                                if (commandText == '6') {
+                                  content = contentController.text.split('\n');
+                                  contentController.text = 'Cargado';
+                                }
+                              },
+                            ),
                           ),
                         ],
                       ),
-                    )
+                      const SizedBox(
+                        height: 20,
+                      ),
+                      ElevatedButton(
+                          onPressed: () {
+                            String topic =
+                                'tools/$productCode/${serialNumberController.text.trim()}';
+                            subToTopicMQTT(topic);
+                            listenToTopics();
+                            if (commandText == '6') {
+                              for (var line in content) {
+                                String msg = jsonEncode({
+                                  'cmd': commandText,
+                                  'content': '$key#$line'
+                                });
+                                printLog(msg);
+
+                                sendMessagemqtt(topic, msg);
+                              }
+                              String fun = key == 0
+                                  ? 'Amazon CA'
+                                  : key == 1
+                                      ? 'Device cert.'
+                                      : 'Private Key';
+                              registerActivity(
+                                  productCode,
+                                  serialNumberController.text.trim(),
+                                  'Se envio via mqtt un $fun');
+                              contentController.clear();
+                            } else {
+                              String msg = jsonEncode({
+                                'cmd': commandText,
+                                'content': contentController.text.trim()
+                              });
+                              registerActivity(
+                                  productCode,
+                                  serialNumberController.text.trim(),
+                                  'Se envio via mqtt: $msg');
+                              sendMessagemqtt(topic, msg);
+                              contentController.clear();
+                            }
+                          },
+                          child: const Text('Enviar comando')),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      Container(
+                        width: 300,
+                        height: 300,
+                        decoration: BoxDecoration(
+                          color: const Color(0xff2b124c),
+                          borderRadius: BorderRadius.circular(20),
+                          border: const Border(
+                            bottom:
+                                BorderSide(color: Color(0xff854f6c), width: 5),
+                            right:
+                                BorderSide(color: Color(0xff854f6c), width: 5),
+                            left:
+                                BorderSide(color: Color(0xff854f6c), width: 5),
+                            top: BorderSide(color: Color(0xff854f6c), width: 5),
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            const Text(
+                              'Respuesta:',
+                              style: TextStyle(
+                                  color: Color(0xFFdfb6b2),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 30),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(
+                              height: 20,
+                            ),
+                            Text(
+                              textToShow,
+                              style: const TextStyle(
+                                  color: Color(0xFFdfb6b2), fontSize: 30),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      )
+                    ],
                   ],
                 ),
               ),
@@ -882,19 +1254,18 @@ class RegbankTabState extends State<RegbankTab> {
 
 //!Locuritas.
 
-  void testFirestore() async {
-    String url =
-        'https://script.google.com/macros/s/AKfycbwwIHRUsVgeXTZ33-4lMOz8wYln95jgM4wPcnXmYDvKrFeLz-bH-tHgIPeGc2T-eREGlQ/exec';
-    final Uri uri = Uri.parse(url).replace(
-        queryParameters: {'deviceName': 'Detector23111633', 'alert': 'true'});
-    var response = await http.post(uri);
+  // void testFirestore() async {
+  //   String url =
+  //       'https://script.google.com/macros/s/AKfycbwwIHRUsVgeXTZ33-4lMOz8wYln95jgM4wPcnXmYDvKrFeLz-bH-tHgIPeGc2T-eREGlQ/exec';
+  //   var response = await dio.post(url,
+  //       queryParameters: {'deviceName': 'Detector23111633', 'alert': 'true'});
 
-    if (response.statusCode == 200) {
-      printLog('Datos enviados correctamente');
-    } else {
-      printLog('Error al enviar datos: ${response.body}');
-    }
-  }
+  //   if (response.statusCode == 200) {
+  //     printLog('Datos enviados correctamente');
+  //   } else {
+  //     printLog('Error al enviar datos: ${response.data}');
+  //   }
+  // }
 
 //!Locuritas
 
@@ -1070,19 +1441,17 @@ class RegbankTabState extends State<RegbankTab> {
       'body': body,
     });
 
-    // Configurando los headers de la solicitud para enviar JSON
-    var headers = {
-      'Content-Type': 'application/json',
-    };
+    // var headers = {
+    //   'Content-Type': 'application/json',
+    // };
 
-    final Uri uri = Uri.parse(url);
-    var response = await http.post(uri, headers: headers, body: requestBody);
+    var response = await dio.post(url, data: requestBody);
 
     if (response.statusCode == 200) {
       printLog('Datos enviados correctamente');
       return true;
     } else {
-      printLog('Error al enviar datos: ${response.bodyBytes.toString()}');
+      printLog('Error al enviar datos: ${response.data.toString()}');
       return false;
     }
   }
@@ -1091,13 +1460,12 @@ class RegbankTabState extends State<RegbankTab> {
     var url =
         'https://script.google.com/macros/s/AKfycbx8sz7I8Tn6lKbG7QgsRgTyOi4ayGND5LSHtZl4JLG2OIFvsgTgyza2HIB1kVh_gXmj3Q/exec';
 
-    final Uri uri = Uri.parse(url);
-    var response = await http.get(uri);
+    var response = await dio.get(url);
 
     if (response.statusCode == 200) {
       printLog('Wipe realizado correctamente');
     } else {
-      printLog('Error al enviar datos: ${response.body}');
+      printLog('Error al enviar datos: ${response.data.toString()}');
     }
   }
 
@@ -1874,9 +2242,9 @@ class LoadState extends State<LoadingPage> {
           navigatorKey.currentState?.pushReplacementNamed('/detector');
         } else if (deviceType == '020010') {
           navigatorKey.currentState?.pushReplacementNamed('/io');
-        }else if (deviceType == '024011'){
+        } else if (deviceType == '024011') {
           navigatorKey.currentState?.pushReplacementNamed('/roller');
-        }else if(deviceType == '019000'){
+        } else if (deviceType == '019000') {
           navigatorKey.currentState?.pushReplacementNamed('/patito');
         }
       } else {
@@ -1893,6 +2261,10 @@ class LoadState extends State<LoadingPage> {
       toolsValues = await myDevice.toolsUuid.read();
       printLog('Valores tools: $toolsValues || ${utf8.decode(toolsValues)}');
       printLog('Valores info: $infoValues || ${utf8.decode(infoValues)}');
+
+      await queryItems(
+          service, command(deviceType), extractSerialNumber(deviceName));
+
       //Si es un calefactor
       if (deviceType == '022000' ||
           deviceType == '027000' ||

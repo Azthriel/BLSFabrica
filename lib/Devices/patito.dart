@@ -6,7 +6,7 @@ import 'dart:typed_data';
 import 'package:biocaldensmartlifefabrica/master.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:http/http.dart' as http;
+// import 'package:http/http.dart' as http;
 
 class PatitoTab extends StatefulWidget {
   const PatitoTab({super.key});
@@ -719,8 +719,8 @@ class OtaTabState extends State<OtaTab> {
           await file.delete();
         }
 
-        var req = await http.get(Uri.parse(url));
-        var bytes = req.body.codeUnits;
+        var req = await dio.get(url);
+        var bytes = req.data.toString().codeUnits;
 
         await file.writeAsBytes(bytes);
 
