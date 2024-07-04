@@ -115,6 +115,7 @@ void listenToTopics() {
           List<String> parts = messageMap['esp_res'].toString().split(':');
           deviceResponseMqtt =
               'SoftVer: ${parts[2]}\nHardVer: ${parts[3]}';
+          showToast('Equipo conectado');
         } else {
           deviceResponseMqtt = messageMap['esp_res'].toString();
         }

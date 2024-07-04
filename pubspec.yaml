@@ -26,6 +26,7 @@ dependencies:
   provider: ^6.1.2
   dio: ^5.4.3+1
   aws_dynamodb_api: ^2.0.0
+  fl_chart: ^0.68.0
 
 dev_dependencies:
   flutter_test:

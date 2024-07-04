@@ -203,7 +203,7 @@ class InfoTabState extends State<InfoTab> {
 
   void sendDataToDevice() async {
     String dataToSend = textController.text;
-    String data = '${command(deviceType)}[4]($dataToSend)';
+    String data = '${command(deviceName)}[4]($dataToSend)';
     try {
       await myDevice.toolsUuid.write(data.codeUnits);
     } catch (e) {
@@ -253,7 +253,7 @@ class InfoTabState extends State<InfoTab> {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  registerActivity(command(deviceType), textController.text,
+                  registerActivity(command(deviceName), textController.text,
                       'Se coloco el número de serie');
                   sendDataToDevice();
                 },
@@ -303,10 +303,10 @@ class InfoTabState extends State<InfoTab> {
               const SizedBox(height: 50),
               ElevatedButton(
                 onPressed: () {
-                  registerActivity(command(deviceType), serialNumber,
+                  registerActivity(command(deviceName), serialNumber,
                       'Se borró la NVS de este equipo...');
                   myDevice.toolsUuid
-                      .write('${command(deviceType)}[0](1)'.codeUnits);
+                      .write('${command(deviceName)}[0](1)'.codeUnits);
                 },
                 style: ButtonStyle(
                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
@@ -475,7 +475,7 @@ class SetTabState extends State<SetTab> {
                                   onSelected: (value) {
                                     common[index] = '0';
                                     String data =
-                                        '${command(deviceType)}[14]($index#${common[index]})';
+                                        '${command(deviceName)}[14]($index#${common[index]})';
                                     printLog(data);
                                     myDevice.toolsUuid.write(data.codeUnits);
                                   },
@@ -499,7 +499,7 @@ class SetTabState extends State<SetTab> {
                                   onSelected: (value) {
                                     common[index] = '1';
                                     String data =
-                                        '${command(deviceType)}[14]($index#${common[index]})';
+                                        '${command(deviceName)}[14]($index#${common[index]})';
                                     printLog(data);
                                     myDevice.toolsUuid.write(data.codeUnits);
                                   },
@@ -548,7 +548,7 @@ class SetTabState extends State<SetTab> {
                                     TextButton(
                                       onPressed: () {
                                         String fun =
-                                            '${command(deviceType)}[13]($index#${entrada ? '0' : '1'})';
+                                            '${command(deviceName)}[13]($index#${entrada ? '0' : '1'})';
                                         printLog(fun);
                                         myDevice.toolsUuid.write(fun.codeUnits);
                                         Navigator.of(dialogContext).pop();
@@ -728,16 +728,16 @@ class CredsTabState extends State<CredsTab> {
                               deviceCert != null) {
                             printLog('Estan todos anashe');
                             registerActivity(
-                                command(deviceType),
+                                command(deviceName),
                                 extractSerialNumber(deviceName),
                                 'Se asigno credenciales de AWS al equipo');
                             setState(() {
                               sending = true;
                             });
 
-                            await writeLarge(amazonCA!, 0, deviceType);
-                            await writeLarge(deviceCert!, 1, deviceType);
-                            await writeLarge(privateKey!, 2, deviceType);
+                            await writeLarge(amazonCA!, 0, deviceName);
+                            await writeLarge(deviceCert!, 1, deviceName);
+                            await writeLarge(privateKey!, 2, deviceName);
 
                             setState(() {
                               sending = false;
@@ -805,7 +805,7 @@ class OtaTabState extends State<OtaTab> {
 
     printLog(url);
     try {
-      String data = '${command(deviceType)}[2]($url)';
+      String data = '${command(deviceName)}[2]($url)';
       await myDevice.toolsUuid.write(data.codeUnits);
       printLog('Si mandé ota');
     } catch (e, stackTrace) {
@@ -919,7 +919,7 @@ class OtaTabState extends State<OtaTab> {
         var firmware = await file.readAsBytes();
         firmwareGlobal = firmware;
 
-        String data = '${command(deviceType)}[3](${bytes.length})';
+        String data = '${command(deviceName)}[3](${bytes.length})';
         printLog(data);
         await myDevice.toolsUuid.write(data.codeUnits);
         sizeWasSend = true;
@@ -1017,7 +1017,7 @@ class OtaTabState extends State<OtaTab> {
               child: ElevatedButton(
                 onPressed: () {
                   registerActivity(
-                      command(deviceType),
+                      command(deviceName),
                       extractSerialNumber(deviceName),
                       'Se envio OTA Wifi a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
                   sendOTAWifi();
@@ -1055,7 +1055,7 @@ class OtaTabState extends State<OtaTab> {
               child: ElevatedButton(
                 onPressed: () {
                   registerActivity(
-                      command(deviceType),
+                      command(deviceName),
                       extractSerialNumber(deviceName),
                       'Se envio OTA ble a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
                   sendOTABLE();

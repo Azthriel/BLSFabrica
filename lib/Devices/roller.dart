@@ -103,7 +103,7 @@ class RollerTabState extends State<RollerTab> {
           useMaterial3: true,
         ),
         home: DefaultTabController(
-          length: factoryMode ? 4 : 3,
+          length: factoryMode ? 5 : 4,
           child: PopScope(
             canPop: false,
             onPopInvoked: (didPop) {
@@ -144,6 +144,7 @@ class RollerTabState extends State<RollerTab> {
                   indicatorColor: const Color(0xffdfb6b2),
                   tabs: [
                     const Tab(icon: Icon(Icons.settings)),
+                    const Tab(icon: Icon(Icons.star)),
                     const Tab(
                       icon: Icon(Icons.rotate_left_outlined),
                     ),
@@ -169,6 +170,7 @@ class RollerTabState extends State<RollerTab> {
               body: TabBarView(
                 children: [
                   const ToolsPage(),
+                  const ParamsTab(),
                   const RollcontrolTab(),
                   if (factoryMode) ...[const CredsTab()],
                   const OtaTab(),
@@ -193,7 +195,7 @@ class ToolsPageState extends State<ToolsPage> {
 
   void sendDataToDevice() async {
     String dataToSend = textController.text;
-    String data = '${command(deviceType)}[4]($dataToSend)';
+    String data = '${command(deviceName)}[4]($dataToSend)';
     try {
       await myDevice.toolsUuid.write(data.codeUnits);
     } catch (e) {
@@ -243,7 +245,7 @@ class ToolsPageState extends State<ToolsPage> {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  registerActivity(command(deviceType), textController.text,
+                  registerActivity(command(deviceName), textController.text,
                       'Se coloco el número de serie');
                   sendDataToDevice();
                 },
@@ -256,38 +258,6 @@ class ToolsPageState extends State<ToolsPage> {
                 ),
                 child: const Text('Enviar'),
               ),
-              const SizedBox(height: 20),
-              const Text('Estado del control por distancia en el equipo:',
-                  textAlign: TextAlign.center,
-                  style: (TextStyle(
-                      fontSize: 20.0,
-                      color: Color(0xfffbe4d8),
-                      fontWeight: FontWeight.bold))),
-              Text.rich(
-                TextSpan(
-                  text: distanceControlActive ? 'Activado' : 'Desactivado',
-                  style: (const TextStyle(
-                      fontSize: 20.0,
-                      color: Color(0xFFdfb6b2),
-                      fontWeight: FontWeight.bold)),
-                ),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              if (distanceControlActive) ...[
-                ElevatedButton(
-                  onPressed: () {
-                    String mailData = '${command(deviceType)}[5](0)';
-                    myDevice.toolsUuid.write(mailData.codeUnits);
-                    registerActivity(command(deviceType), serialNumber,
-                        'Se desactivo el control por distancia');
-                  },
-                  child: const Text(
-                    'Desacticar control por distancia',
-                  ),
-                ),
-              ],
               const SizedBox(height: 20),
               const Text.rich(
                 TextSpan(
@@ -325,10 +295,10 @@ class ToolsPageState extends State<ToolsPage> {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
-                  registerActivity(command(deviceType), serialNumber,
+                  registerActivity(command(deviceName), serialNumber,
                       'Se borró la NVS de este equipo...');
                   myDevice.toolsUuid
-                      .write('${command(deviceType)}[0](1)'.codeUnits);
+                      .write('${command(deviceName)}[0](1)'.codeUnits);
                 },
                 style: ButtonStyle(
                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
@@ -387,11 +357,11 @@ class ToolsPageState extends State<ToolsPage> {
                           TextButton(
                             onPressed: () {
                               registerActivity(
-                                  command(deviceType),
+                                  command(deviceName),
                                   serialNumber,
                                   'Se mando el ciclado de este equipo');
                               String data =
-                                  '${command(deviceType)}[13](${int.parse(cicleController.text)})';
+                                  '${command(deviceName)}[13](${int.parse(cicleController.text)})';
                               myDevice.toolsUuid.write(data.codeUnits);
                               navigatorKey.currentState!.pop();
                             },
@@ -411,6 +381,65 @@ class ToolsPageState extends State<ToolsPage> {
                 ),
                 child: const Text('Configurar ciclado'),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+//PARAMS TAB //Owner, secondary Admins and more
+
+class ParamsTab extends StatefulWidget {
+  const ParamsTab({super.key});
+  @override
+  State<ParamsTab> createState() => ParamsTabState();
+}
+
+class ParamsTabState extends State<ParamsTab> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xff190019),
+      body: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 20),
+              const Text('Estado del control por\n distancia en el equipo:',
+                  textAlign: TextAlign.center,
+                  style: (TextStyle(
+                      fontSize: 20.0,
+                      color: Color(0xfffbe4d8),
+                      fontWeight: FontWeight.bold))),
+              Text.rich(
+                TextSpan(
+                  text: distanceControlActive ? 'Activado' : 'Desactivado',
+                  style: (const TextStyle(
+                      fontSize: 20.0,
+                      color: Color(0xFFdfb6b2),
+                      fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              if (distanceControlActive) ...[
+                ElevatedButton(
+                  onPressed: () {
+                    String mailData = '${command(deviceName)}[5](0)';
+                    myDevice.toolsUuid.write(mailData.codeUnits);
+                    registerActivity(command(deviceName), serialNumber,
+                        'Se desactivo el control por distancia');
+                  },
+                  child: const Text(
+                    'Desacticar control por distancia',
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -1267,12 +1296,12 @@ class CredsTabState extends State<CredsTab> {
                         deviceCert != null) {
                       printLog('Estan todos anashe');
                       registerActivity(
-                          command(deviceType),
+                          command(deviceName),
                           extractSerialNumber(deviceName),
                           'Se asigno credenciales de AWS al equipo');
-                      writeLarge(amazonCA!, 0, deviceType);
-                      writeLarge(deviceCert!, 1, deviceType);
-                      writeLarge(privateKey!, 2, deviceType);
+                      writeLarge(amazonCA!, 0, deviceName);
+                      writeLarge(deviceCert!, 1, deviceName);
+                      writeLarge(privateKey!, 2, deviceName);
                     }
                   },
                   child: const Center(
@@ -1343,7 +1372,7 @@ class OtaTabState extends State<OtaTab> {
 
     printLog(url);
     try {
-      String data = '${command(deviceType)}[2]($url)';
+      String data = '${command(deviceName)}[2]($url)';
       await myDevice.toolsUuid.write(data.codeUnits);
       printLog('Si mandé ota');
     } catch (e, stackTrace) {
@@ -1442,7 +1471,7 @@ class OtaTabState extends State<OtaTab> {
       }
     } else {
       url =
-          'https://github.com/barberop/sime-domotica/raw/main/${command(deviceType)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';
+          'https://github.com/barberop/sime-domotica/raw/main/${command(deviceName)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';
     }
 
     printLog(url);
@@ -1464,7 +1493,7 @@ class OtaTabState extends State<OtaTab> {
         var firmware = await file.readAsBytes();
         firmwareGlobal = firmware;
 
-        String data = '${command(deviceType)}[3](${bytes.length})';
+        String data = '${command(deviceName)}[3](${bytes.length})';
         printLog(data);
         await myDevice.toolsUuid.write(data.codeUnits);
         sizeWasSend = true;
@@ -1567,7 +1596,7 @@ class OtaTabState extends State<OtaTab> {
                     child: ElevatedButton(
                       onPressed: () {
                         registerActivity(
-                            command(deviceType),
+                            command(deviceName),
                             extractSerialNumber(deviceName),
                             'Se envio OTA Wifi a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
                         sendOTAWifi(false);
@@ -1608,7 +1637,7 @@ class OtaTabState extends State<OtaTab> {
                     child: ElevatedButton(
                       onPressed: () {
                         registerActivity(
-                            command(deviceType),
+                            command(deviceName),
                             extractSerialNumber(deviceName),
                             'Se envio OTA Wifi a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
                         sendOTAWifi(true);
@@ -1656,7 +1685,7 @@ class OtaTabState extends State<OtaTab> {
                     child: ElevatedButton(
                       onPressed: () {
                         registerActivity(
-                            command(deviceType),
+                            command(deviceName),
                             extractSerialNumber(deviceName),
                             'Se envio OTA ble a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
                         sendOTABLE(false);
@@ -1698,7 +1727,7 @@ class OtaTabState extends State<OtaTab> {
                     child: ElevatedButton(
                       onPressed: () {
                         registerActivity(
-                            command(deviceType),
+                            command(deviceName),
                             extractSerialNumber(deviceName),
                             'Se envio OTA ble a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
                         sendOTABLE(true);

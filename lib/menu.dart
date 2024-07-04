@@ -28,6 +28,7 @@ class MenuPageState extends State<MenuPage> {
   void initState() {
     super.initState();
     startBluetoothMonitoring();
+    startLocationMonitoring();
     setupMqtt();
   }
 
@@ -372,83 +373,85 @@ class ControlTabState extends State<ControlTab> {
         foregroundColor: const Color(0xfffbe4d8),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(height: 20),
-            SizedBox(
-                width: 300,
-                child: TextField(
-                  style: const TextStyle(color: Color(0xfffbe4d8)),
-                  controller: pcController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Ingrese el código de producto',
-                    labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                    hintStyle: TextStyle(color: Color(0xfffbe4d8)),
-                  ),
-                  onChanged: (value) {
-                    productCode = '${value}_IOT';
-                  },
-                )),
-            const SizedBox(height: 20),
-            SizedBox(
-                width: 300,
-                child: TextField(
-                  style: const TextStyle(color: Color(0xfffbe4d8)),
-                  controller: snController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Ingrese el número de serie',
-                    labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                    hintStyle: TextStyle(color: Color(0xfffbe4d8)),
-                  ),
-                  onChanged: (value) {
-                    serialNumber = value;
-                  },
-                )),
-            const SizedBox(height: 20),
-            Text(
-              '¿Listo para la venta? ${stateSell ? "SI" : "NO"}',
-              style: const TextStyle(color: Color(0xfffbe4d8)),
-            ),
-            const SizedBox(height: 20),
-            Switch(
-                activeColor: const Color(0xfffbe4d8),
-                activeTrackColor: const Color(0xff854f6c),
-                inactiveThumbColor: const Color(0xff854f6c),
-                inactiveTrackColor: const Color(0xfffbe4d8),
-                value: stateSell,
-                onChanged: (value) {
-                  setState(() {
-                    stateSell = value;
-                  });
-                }),
-            const SizedBox(height: 20),
-            SizedBox(
-                width: 300,
-                child: TextField(
-                  style: const TextStyle(color: Color(0xfffbe4d8)),
-                  controller: comController,
-                  keyboardType: TextInputType.text,
-                  decoration: const InputDecoration(
-                    labelText: 'Ingrese un comentario (opcional)',
-                    labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                    hintStyle: TextStyle(color: Color(0xfffbe4d8)),
-                  ),
-                )),
-            const SizedBox(height: 20),
-            isRegister
-                ? const CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: () {
-                      String accion =
-                          'Se marco el equipo como ${stateSell ? 'listo para la venta' : 'no listo para la venta'}';
-                      registerActivity(productCode, serialNumber, accion);
-                      updateGoogleSheet();
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 20),
+              SizedBox(
+                  width: 300,
+                  child: TextField(
+                    style: const TextStyle(color: Color(0xfffbe4d8)),
+                    controller: pcController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Ingrese el código de producto',
+                      labelStyle: TextStyle(color: Color(0xfffbe4d8)),
+                      hintStyle: TextStyle(color: Color(0xfffbe4d8)),
+                    ),
+                    onChanged: (value) {
+                      productCode = '${value}_IOT';
                     },
-                    child: const Text('Subir')),
-          ],
+                  )),
+              const SizedBox(height: 20),
+              SizedBox(
+                  width: 300,
+                  child: TextField(
+                    style: const TextStyle(color: Color(0xfffbe4d8)),
+                    controller: snController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Ingrese el número de serie',
+                      labelStyle: TextStyle(color: Color(0xfffbe4d8)),
+                      hintStyle: TextStyle(color: Color(0xfffbe4d8)),
+                    ),
+                    onChanged: (value) {
+                      serialNumber = value;
+                    },
+                  )),
+              const SizedBox(height: 20),
+              Text(
+                '¿Listo para la venta? ${stateSell ? "SI" : "NO"}',
+                style: const TextStyle(color: Color(0xfffbe4d8)),
+              ),
+              const SizedBox(height: 20),
+              Switch(
+                  activeColor: const Color(0xfffbe4d8),
+                  activeTrackColor: const Color(0xff854f6c),
+                  inactiveThumbColor: const Color(0xff854f6c),
+                  inactiveTrackColor: const Color(0xfffbe4d8),
+                  value: stateSell,
+                  onChanged: (value) {
+                    setState(() {
+                      stateSell = value;
+                    });
+                  }),
+              const SizedBox(height: 20),
+              SizedBox(
+                  width: 300,
+                  child: TextField(
+                    style: const TextStyle(color: Color(0xfffbe4d8)),
+                    controller: comController,
+                    keyboardType: TextInputType.text,
+                    decoration: const InputDecoration(
+                      labelText: 'Ingrese un comentario (opcional)',
+                      labelStyle: TextStyle(color: Color(0xfffbe4d8)),
+                      hintStyle: TextStyle(color: Color(0xfffbe4d8)),
+                    ),
+                  )),
+              const SizedBox(height: 20),
+              isRegister
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: () {
+                        String accion =
+                            'Se marco el equipo como ${stateSell ? 'listo para la venta' : 'no listo para la venta'}';
+                        registerActivity(productCode, serialNumber, accion);
+                        updateGoogleSheet();
+                      },
+                      child: const Text('Subir')),
+            ],
+          ),
         ),
       ),
     );
@@ -679,11 +682,10 @@ class ToolsAWSState extends State<ToolsAWS> {
                           ),
                           ElevatedButton(
                             onPressed: () {
-                              putOwner(service, command(deviceType),
-                                  serialNumber, '');
+                              putOwner(service, productCode, serialNumber, '');
                               registerActivity(
-                                  command(deviceType),
-                                  serialNumber,
+                                  productCode,
+                                  serialNumberController.text.trim(),
                                   'Se elimino el owner del equipo');
                               setState(() {
                                 owner = '';
@@ -717,46 +719,45 @@ class ToolsAWSState extends State<ToolsAWS> {
                           ),
                           for (int i = 0; i < secondaryAdmins.length; i++) ...[
                             const Divider(),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                const CircleAvatar(
-                                  radius: 15,
-                                  backgroundColor: Color(0xfffbe4d8),
-                                  child: Icon(Icons.person,
-                                      color: Color(0xff854f6c)),
+                            Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    IconButton(
+                                      onPressed: () {
+                                        registerActivity(
+                                            productCode,
+                                            serialNumberController.text.trim(),
+                                            'Se elimino el admin ${secondaryAdmins[i]} del equipo');
+                                        setState(() {
+                                          secondaryAdmins
+                                              .remove(secondaryAdmins[i]);
+                                        });
+                                        putSecondaryAdmins(
+                                            service,
+                                            productCode,
+                                            serialNumberController.text.trim(),
+                                            secondaryAdmins);
+                                      },
+                                      icon: const Icon(Icons.delete,
+                                          color: Colors.grey),
+                                    ),
+                                    const SizedBox(
+                                      width: 5,
+                                    ),
+                                    Text(
+                                      secondaryAdmins[i],
+                                      style: (const TextStyle(
+                                          fontSize: 20.0,
+                                          color: Color(0xFFdfb6b2),
+                                          fontWeight: FontWeight.normal)),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(
-                                  width: 5,
-                                ),
-                                Text(
-                                  secondaryAdmins[i],
-                                  style: (const TextStyle(
-                                      fontSize: 20.0,
-                                      color: Color(0xFFdfb6b2),
-                                      fontWeight: FontWeight.normal)),
-                                ),
-                                const Spacer(),
-                                IconButton(
-                                  onPressed: () {
-                                    registerActivity(
-                                        command(deviceType),
-                                        serialNumber,
-                                        'Se elimino el admin ${secondaryAdmins[i]} del equipo');
-                                    setState(() {
-                                      secondaryAdmins
-                                          .remove(secondaryAdmins[i]);
-                                    });
-                                    putSecondaryAdmins(
-                                        service,
-                                        command(deviceType),
-                                        extractSerialNumber(deviceName),
-                                        secondaryAdmins);
-                                  },
-                                  icon: const Icon(Icons.delete,
-                                      color: Colors.grey),
-                                ),
-                              ],
+                              ),
                             )
                           ],
                           const Divider(),
@@ -836,13 +837,13 @@ class ToolsAWSState extends State<ToolsAWS> {
                                     TextButton(
                                       onPressed: () {
                                         registerActivity(
-                                            command(deviceType),
+                                            productCode,
                                             serialNumber,
                                             'Se modifico el vencimiento del beneficio "administradores secundarios extras"');
                                         putDate(
                                             service,
-                                            command(deviceType),
-                                            extractSerialNumber(deviceName),
+                                            productCode,
+                                            serialNumberController.text.trim(),
                                             dateController.text.trim(),
                                             false);
                                         setState(() {
@@ -937,13 +938,13 @@ class ToolsAWSState extends State<ToolsAWS> {
                                     TextButton(
                                       onPressed: () {
                                         registerActivity(
-                                            command(deviceType),
+                                            productCode,
                                             serialNumber,
                                             'Se modifico el vencimiento del beneficio "alquiler temporario"');
                                         putDate(
                                             service,
-                                            command(deviceType),
-                                            extractSerialNumber(deviceName),
+                                            productCode,
+                                            serialNumberController.text.trim(),
                                             dateController.text.trim(),
                                             true);
                                         setState(() {
@@ -2263,7 +2264,7 @@ class LoadState extends State<LoadingPage> {
       printLog('Valores info: $infoValues || ${utf8.decode(infoValues)}');
 
       await queryItems(
-          service, command(deviceType), extractSerialNumber(deviceName));
+          service, command(deviceName), extractSerialNumber(deviceName));
 
       //Si es un calefactor
       if (deviceType == '022000' ||

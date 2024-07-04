@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
-
+import 'package:fl_chart/fl_chart.dart';
 import 'package:biocaldensmartlifefabrica/master.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -190,7 +191,8 @@ class ToolsPageState extends State<ToolsPage> {
 
   void sendDataToDevice() async {
     String dataToSend = textController.text;
-    String data = '${command(deviceType)}[4]($dataToSend)';
+    String data = '${command(deviceName)}[4]($dataToSend)';
+    printLog(data);
     try {
       await myDevice.toolsUuid.write(data.codeUnits);
     } catch (e) {
@@ -240,7 +242,7 @@ class ToolsPageState extends State<ToolsPage> {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  registerActivity(command(deviceType), textController.text,
+                  registerActivity(command(deviceName), textController.text,
                       'Se coloco el número de serie');
                   sendDataToDevice();
                 },
@@ -291,10 +293,10 @@ class ToolsPageState extends State<ToolsPage> {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
-                  registerActivity(command(deviceType), serialNumber,
+                  registerActivity(command(deviceName), serialNumber,
                       'Se borró la NVS de este equipo...');
                   myDevice.toolsUuid
-                      .write('${command(deviceType)}[0](1)'.codeUnits);
+                      .write('${command(deviceName)}[0](1)'.codeUnits);
                 },
                 style: ButtonStyle(
                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
@@ -325,9 +327,14 @@ class ListTab extends StatefulWidget {
 }
 
 class ListTabState extends State<ListTab> {
-  List<String> things = [];
-  List<double> support = [];
-  List<DateTime> tiempos = [];
+  List<double> aceleracionX = List<double>.filled(1000, 0.0, growable: true);
+  List<double> aceleracionY = List<double>.filled(1000, 0.0, growable: true);
+  List<double> aceleracionZ = List<double>.filled(1000, 0.0, growable: true);
+  List<double> giroX = List<double>.filled(1000, 0.0, growable: true);
+  List<double> giroY = List<double>.filled(1000, 0.0, growable: true);
+  List<double> giroZ = List<double>.filled(1000, 0.0, growable: true);
+  List<DateTime> dates =
+      List<DateTime>.generate(1000, (index) => DateTime.now(), growable: true);
 
   @override
   void initState() {
@@ -337,46 +344,202 @@ class ListTabState extends State<ListTab> {
 
   void subToPatito() {
     myDevice.patitoUuid.setNotifyValue(true);
-
     final patitoSub = myDevice.patitoUuid.onValueReceived.listen((event) {
-      var parts = utf8.decode(event).split(':');
-      for(var part in parts){
-        support.add(double.parse(part)/1000);
-      }
       setState(() {
-        String fun  = support.join(':');
-        things.add(fun);
-        tiempos.add(DateTime.now());
+        addData(aceleracionX, transformToDouble(event.sublist(0, 4)));
+        addData(aceleracionY, transformToDouble(event.sublist(4, 8)));
+        addData(aceleracionZ, transformToDouble(event.sublist(8, 12)));
+        addData(giroX, transformToDouble(event.sublist(12, 16)));
+        addData(giroY, transformToDouble(event.sublist(16, 20)));
+        addData(giroZ, transformToDouble(event.sublist(20)));
+        addDate(dates, DateTime.now());
       });
     });
-
     myDevice.device.cancelWhenDisconnected(patitoSub);
+  }
+
+  void addData(List<double> list, double value) {
+    // printLog(value);
+    if (list.length >= 1000) {
+      list.removeAt(0);
+    }
+    list.add(value);
+  }
+
+  void addDate(List<DateTime> list, DateTime date) {
+    if (list.length >= 1000) {
+      list.removeAt(0);
+    }
+    list.add(date);
+  }
+
+  double transformToDouble(List<int> data) {
+    ByteData byteData = ByteData(4);
+    for (int i = 0; i < data.length; i++) {
+      byteData.setInt8(i, data[i]);
+    }
+
+    double value = byteData.getFloat32(0, Endian.little);
+
+    if (value < -15.0) {
+      return -15.0;
+    } else if (value > 15.0) {
+      return 15;
+    } else {
+      return value;
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xff190019),
-      body: ListView.builder(
-          itemCount: things.length,
-          itemBuilder: (context, index) {
-            return ListTile(
-              title: Text(
-                things[index],
-                style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xffdfb6b2)),
-              ),
-              subtitle: Text(
-                tiempos[index].toIso8601String(),
-                style: const TextStyle(
+      body: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            createChart('Aceleración X', dates, aceleracionX),
+            createChart('Giro X', dates, giroX),
+            createChart('Aceleración Y', dates, aceleracionY),
+            createChart('Giro Y', dates, giroY),
+            createChart('Aceleración Z', dates, aceleracionZ),
+            createChart('Giro Z', dates, giroZ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget createChart(String title, List<DateTime> dates, List<double> values) {
+    double width = MediaQuery.of(context).size.width;
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        children: [
+          Text(title,
+              style: const TextStyle(
                   fontSize: 18,
-                  color: Color(0xfffbe4d8),
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xffdfb6b2))),
+          SizedBox(
+            height: 200,
+            width: width - 20,
+            child: LineChart(
+              LineChartData(
+                minY: -15.0,
+                baselineX: 60,
+                maxY: 15.0,
+                borderData: FlBorderData(
+                    border: const Border(
+                        top: BorderSide(color: Color(0xffdfb6b2)),
+                        bottom: BorderSide(color: Color(0xffdfb6b2)),
+                        right: BorderSide(color: Color(0xffdfb6b2)),
+                        left: BorderSide(color: Color(0xffdfb6b2)))),
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        if (value == 0.0 || value == 15.0 || value == -15.0) {
+                          return Text(
+                            value.round().toString(),
+                            style: const TextStyle(
+                                color: Color(0xfffbe4d8), fontSize: 10),
+                          );
+                        } else {
+                          return const Text('');
+                        }
+                      },
+                    ),
+                  ),
+                  rightTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: false,
+                      getTitlesWidget: (value, meta) {
+                        if (value == 0.0 || value == 50.0 || value == -50.0) {
+                          return Text(
+                            value.round().toString(),
+                            style: const TextStyle(
+                                color: Color(0xfffbe4d8), fontSize: 10),
+                          );
+                        } else {
+                          return const Text('');
+                        }
+                      },
+                    ),
+                  ),
+                  topTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: false,
+                      getTitlesWidget: (value, meta) {
+                        if (value == 0.0 || value == 50.0 || value == -50.0) {
+                          return Text(
+                            value.round().toString(),
+                            style: const TextStyle(
+                                color: Color(0xfffbe4d8), fontSize: 10),
+                          );
+                        } else {
+                          return const Text('');
+                        }
+                      },
+                    ),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: false,
+                      reservedSize: 30,
+                      getTitlesWidget: (value, meta) {
+                        int index = value.toInt();
+                        if (index >= 0 && index < dates.length) {
+                          return Text('${dates[index].second}',
+                              style: const TextStyle(color: Color(0xfffbe4d8)));
+                        }
+                        return const Text('');
+                      },
+                    ),
+                  ),
                 ),
+                gridData: FlGridData(
+                  show: false,
+                  horizontalInterval: 50,
+                  getDrawingHorizontalLine: (value) {
+                    return const FlLine(
+                      color: Color(0xff37434d),
+                      strokeWidth: 1,
+                    );
+                  },
+                  getDrawingVerticalLine: (value) {
+                    return const FlLine(
+                      color: Color(0xff37434d),
+                      strokeWidth: 1,
+                    );
+                  },
+                ),
+                lineBarsData: [
+                  LineChartBarData(
+                      color: const Color(0xFF522B5B),
+                      spots: values
+                          .asMap()
+                          .entries
+                          .map((e) => FlSpot(e.key.toDouble(), e.value))
+                          .toList(),
+                      isCurved: true,
+                      barWidth: 5,
+                      belowBarData: BarAreaData(
+                        show: true,
+                      ),
+                      dotData: const FlDotData(show: false)),
+                ],
               ),
-            );
-          }),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -524,15 +687,15 @@ class CredsTabState extends State<CredsTab> {
                               deviceCert != null) {
                             printLog('Estan todos anashe');
                             registerActivity(
-                                command(deviceType),
+                                command(deviceName),
                                 extractSerialNumber(deviceName),
                                 'Se asigno credenciales de AWS al equipo');
                             setState(() {
                               sending = true;
                             });
-                            await writeLarge(amazonCA!, 0, deviceType);
-                            await writeLarge(deviceCert!, 1, deviceType);
-                            await writeLarge(privateKey!, 2, deviceType);
+                            await writeLarge(amazonCA!, 0, deviceName);
+                            await writeLarge(deviceCert!, 1, deviceName);
+                            await writeLarge(privateKey!, 2, deviceName);
                             setState(() {
                               sending = false;
                             });
@@ -606,7 +769,7 @@ class OtaTabState extends State<OtaTab> {
 
     printLog(url);
     try {
-      String data = '${command(deviceType)}[2]($url)';
+      String data = '${command(deviceName)}[2]($url)';
       await myDevice.toolsUuid.write(data.codeUnits);
       printLog('Si mandé ota');
     } catch (e, stackTrace) {
@@ -705,7 +868,7 @@ class OtaTabState extends State<OtaTab> {
       }
     } else {
       url =
-          'https://github.com/barberop/sime-domotica/raw/main/${command(deviceType)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';
+          'https://github.com/barberop/sime-domotica/raw/main/${command(deviceName)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';
     }
 
     printLog(url);
@@ -727,7 +890,7 @@ class OtaTabState extends State<OtaTab> {
         var firmware = await file.readAsBytes();
         firmwareGlobal = firmware;
 
-        String data = '${command(deviceType)}[3](${bytes.length})';
+        String data = '${command(deviceName)}[3](${bytes.length})';
         printLog(data);
         await myDevice.toolsUuid.write(data.codeUnits);
         sizeWasSend = true;
@@ -830,7 +993,7 @@ class OtaTabState extends State<OtaTab> {
                     child: ElevatedButton(
                       onPressed: () {
                         registerActivity(
-                            command(deviceType),
+                            command(deviceName),
                             extractSerialNumber(deviceName),
                             'Se envio OTA Wifi a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
                         sendOTAWifi(false);
@@ -871,7 +1034,7 @@ class OtaTabState extends State<OtaTab> {
                     child: ElevatedButton(
                       onPressed: () {
                         registerActivity(
-                            command(deviceType),
+                            command(deviceName),
                             extractSerialNumber(deviceName),
                             'Se envio OTA Wifi a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
                         sendOTAWifi(true);
@@ -919,7 +1082,7 @@ class OtaTabState extends State<OtaTab> {
                     child: ElevatedButton(
                       onPressed: () {
                         registerActivity(
-                            command(deviceType),
+                            command(deviceName),
                             extractSerialNumber(deviceName),
                             'Se envio OTA ble a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
                         sendOTABLE(false);
@@ -961,7 +1124,7 @@ class OtaTabState extends State<OtaTab> {
                     child: ElevatedButton(
                       onPressed: () {
                         registerActivity(
-                            command(deviceType),
+                            command(deviceName),
                             extractSerialNumber(deviceName),
                             'Se envio OTA ble a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
                         sendOTABLE(true);

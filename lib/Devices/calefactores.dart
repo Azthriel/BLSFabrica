@@ -194,7 +194,7 @@ class ToolsPageState extends State<ToolsPage> {
 
   void sendDataToDevice() async {
     String dataToSend = textController.text;
-    String data = '${command(deviceType)}[4]($dataToSend)';
+    String data = '${command(deviceName)}[4]($dataToSend)';
     try {
       await myDevice.toolsUuid.write(data.codeUnits);
     } catch (e) {
@@ -244,7 +244,7 @@ class ToolsPageState extends State<ToolsPage> {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  registerActivity(command(deviceType), textController.text,
+                  registerActivity(command(deviceName), textController.text,
                       'Se coloco el número de serie');
                   sendDataToDevice();
                 },
@@ -295,10 +295,10 @@ class ToolsPageState extends State<ToolsPage> {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
-                  registerActivity(command(deviceType), serialNumber,
+                  registerActivity(command(deviceName), serialNumber,
                       'Se borró la NVS de este equipo...');
                   myDevice.toolsUuid
-                      .write('${command(deviceType)}[0](1)'.codeUnits);
+                      .write('${command(deviceName)}[0](1)'.codeUnits);
                 },
                 style: ButtonStyle(
                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
@@ -357,9 +357,9 @@ class ParamsTabState extends State<ParamsTab> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    String mailData = '${command(deviceType)}[5](0)';
+                    String mailData = '${command(deviceName)}[5](0)';
                     myDevice.toolsUuid.write(mailData.codeUnits);
-                    registerActivity(command(deviceType), serialNumber,
+                    registerActivity(command(deviceName), serialNumber,
                         'Se desactivo el control por distancia');
                     setState(() {
                       distanceControlActive = false;
@@ -395,8 +395,8 @@ class ParamsTabState extends State<ParamsTab> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    putOwner(service, command(deviceType), serialNumber, '');
-                    registerActivity(command(deviceType), serialNumber,
+                    putOwner(service, command(deviceName), serialNumber, '');
+                    registerActivity(command(deviceName), serialNumber,
                         'Se elimino el owner del equipo');
                     setState(() {
                       owner = '';
@@ -451,12 +451,12 @@ class ParamsTabState extends State<ParamsTab> {
                       const Spacer(),
                       IconButton(
                         onPressed: () {
-                          registerActivity(command(deviceType), serialNumber,
+                          registerActivity(command(deviceName), serialNumber,
                               'Se elimino el admin ${secondaryAdmins[i]} del equipo');
                           setState(() {
                             secondaryAdmins.remove(secondaryAdmins[i]);
                           });
-                          putSecondaryAdmins(service, command(deviceType),
+                          putSecondaryAdmins(service, command(deviceName),
                               extractSerialNumber(deviceName), secondaryAdmins);
                         },
                         icon: const Icon(Icons.delete, color: Colors.grey),
@@ -539,12 +539,12 @@ class ParamsTabState extends State<ParamsTab> {
                           TextButton(
                             onPressed: () {
                               registerActivity(
-                                  command(deviceType),
+                                  command(deviceName),
                                   serialNumber,
                                   'Se modifico el vencimiento del beneficio "administradores secundarios extras"');
                               putDate(
                                   service,
-                                  command(deviceType),
+                                  command(deviceName),
                                   extractSerialNumber(deviceName),
                                   dateController.text.trim(),
                                   false);
@@ -637,12 +637,12 @@ class ParamsTabState extends State<ParamsTab> {
                           TextButton(
                             onPressed: () {
                               registerActivity(
-                                  command(deviceType),
+                                  command(deviceName),
                                   serialNumber,
                                   'Se modifico el vencimiento del beneficio "alquiler temporario"');
                               putDate(
                                   service,
-                                  command(deviceType),
+                                  command(deviceName),
                                   extractSerialNumber(deviceName),
                                   dateController.text.trim(),
                                   true);
@@ -716,23 +716,23 @@ class TempTabState extends State<TempTab> {
   }
 
   void sendTemperature(int temp) {
-    String data = '${command(deviceType)}[7]($temp)';
+    String data = '${command(deviceName)}[7]($temp)';
     myDevice.toolsUuid.write(data.codeUnits);
   }
 
   void turnDeviceOn(bool on) {
     int fun = on ? 1 : 0;
-    String data = '${command(deviceType)}[11]($fun)';
+    String data = '${command(deviceName)}[11]($fun)';
     myDevice.toolsUuid.write(data.codeUnits);
   }
 
   void sendRoomTemperature(String temp) {
-    String data = '${command(deviceType)}[8]($temp)';
+    String data = '${command(deviceName)}[8]($temp)';
     myDevice.toolsUuid.write(data.codeUnits);
   }
 
   void startTempMap() {
-    String data = '${command(deviceType)}[12](0)';
+    String data = '${command(deviceName)}[12](0)';
     myDevice.toolsUuid.write(data.codeUnits);
   }
 
@@ -842,7 +842,7 @@ class TempTabState extends State<TempTab> {
                 ),
                 onSubmitted: (value) {
                   registerActivity(
-                      command(deviceType),
+                      command(deviceName),
                       extractSerialNumber(deviceName),
                       'Se envío de temperatura ambiente: $value°C');
                   sendRoomTemperature(value);
@@ -907,7 +907,7 @@ class TempTabState extends State<TempTab> {
               ElevatedButton(
                 onPressed: () {
                   registerActivity(
-                      command(deviceType),
+                      command(deviceName),
                       extractSerialNumber(deviceName),
                       'Se inicio el mapeo de temperatura en el equipo');
                   startTempMap();
@@ -927,9 +927,9 @@ class TempTabState extends State<TempTab> {
               ),
               ElevatedButton(
                   onPressed: () {
-                    registerActivity(command(deviceType), serialNumber,
+                    registerActivity(command(deviceName), serialNumber,
                         'Se mando el ciclado de la válvula de este equipo');
-                    String data = '${command(deviceType)}[13](1000#5)';
+                    String data = '${command(deviceName)}[13](1000#5)';
                     myDevice.toolsUuid.write(data.codeUnits);
                   },
                   child: const Text('Ciclado fijo')),
@@ -1009,12 +1009,12 @@ class TempTabState extends State<TempTab> {
                           TextButton(
                             onPressed: () {
                               registerActivity(
-                                  command(deviceType),
+                                  command(deviceName),
                                   serialNumber,
                                   'Se mando el ciclado de la válvula de este equipo');
                               int cicle = int.parse(cicleController.text) * 2;
                               String data =
-                                  '${command(deviceType)}[13](${timeController.text}#$cicle)';
+                                  '${command(deviceName)}[13](${timeController.text}#$cicle)';
                               myDevice.toolsUuid.write(data.codeUnits);
                               navigatorKey.currentState!.pop();
                             },
@@ -1083,11 +1083,11 @@ class TempTabState extends State<TempTab> {
                             TextButton(
                               onPressed: () {
                                 registerActivity(
-                                    command(deviceType),
+                                    command(deviceName),
                                     serialNumber,
                                     'Se mando el temporizado de apertura');
                                 String data =
-                                    '${command(deviceType)}[14](${timeController.text.trim()})';
+                                    '${command(deviceName)}[14](${timeController.text.trim()})';
                                 myDevice.toolsUuid.write(data.codeUnits);
                                 navigatorKey.currentState!.pop();
                               },
@@ -1168,10 +1168,10 @@ class TempTabState extends State<TempTab> {
                   onSubmitted: (value) {
                     if (int.parse(value) <= 5000 && int.parse(value) >= 3000) {
                       registerActivity(
-                          command(deviceType),
+                          command(deviceName),
                           extractSerialNumber(deviceName),
                           'Se modifico la distancia de encendido');
-                      putDistanceOn(service, command(deviceType),
+                      putDistanceOn(service, command(deviceName),
                           extractSerialNumber(deviceName), value);
                     } else {
                       showToast('Parametros no permitidos');
@@ -1200,10 +1200,10 @@ class TempTabState extends State<TempTab> {
                   onSubmitted: (value) {
                     if (int.parse(value) <= 300 && int.parse(value) >= 100) {
                       registerActivity(
-                          command(deviceType),
+                          command(deviceName),
                           extractSerialNumber(deviceName),
                           'Se modifico la distancia de apagado');
-                      putDistanceOff(service, command(deviceType),
+                      putDistanceOff(service, command(deviceName),
                           extractSerialNumber(deviceName), value);
                     } else {
                       showToast('Parametros no permitidos');
@@ -1364,15 +1364,15 @@ class CredsTabState extends State<CredsTab> {
                               deviceCert != null) {
                             printLog('Estan todos anashe');
                             registerActivity(
-                                command(deviceType),
+                                command(deviceName),
                                 extractSerialNumber(deviceName),
                                 'Se asigno credenciales de AWS al equipo');
                             setState(() {
                               sending = true;
                             });
-                            await writeLarge(amazonCA!, 0, deviceType);
-                            await writeLarge(deviceCert!, 1, deviceType);
-                            await writeLarge(privateKey!, 2, deviceType);
+                            await writeLarge(amazonCA!, 0, deviceName);
+                            await writeLarge(deviceCert!, 1, deviceName);
+                            await writeLarge(privateKey!, 2, deviceName);
                             setState(() {
                               sending = false;
                             });
@@ -1445,7 +1445,7 @@ class OtaTabState extends State<OtaTab> {
 
     printLog(url);
     try {
-      String data = '${command(deviceType)}[2]($url)';
+      String data = '${command(deviceName)}[2]($url)';
       await myDevice.toolsUuid.write(data.codeUnits);
       printLog('Si mandé ota');
     } catch (e, stackTrace) {
@@ -1544,7 +1544,7 @@ class OtaTabState extends State<OtaTab> {
       }
     } else {
       url =
-          'https://github.com/barberop/sime-domotica/raw/main/${command(deviceType)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';
+          'https://github.com/barberop/sime-domotica/raw/main/${command(deviceName)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';
     }
 
     printLog(url);
@@ -1566,7 +1566,7 @@ class OtaTabState extends State<OtaTab> {
         var firmware = await file.readAsBytes();
         firmwareGlobal = firmware;
 
-        String data = '${command(deviceType)}[3](${bytes.length})';
+        String data = '${command(deviceName)}[3](${bytes.length})';
         printLog(data);
         await myDevice.toolsUuid.write(data.codeUnits);
         sizeWasSend = true;
@@ -1669,7 +1669,7 @@ class OtaTabState extends State<OtaTab> {
                     child: ElevatedButton(
                       onPressed: () {
                         registerActivity(
-                            command(deviceType),
+                            command(deviceName),
                             extractSerialNumber(deviceName),
                             'Se envio OTA Wifi a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
                         sendOTAWifi(false);
@@ -1710,7 +1710,7 @@ class OtaTabState extends State<OtaTab> {
                     child: ElevatedButton(
                       onPressed: () {
                         registerActivity(
-                            command(deviceType),
+                            command(deviceName),
                             extractSerialNumber(deviceName),
                             'Se envio OTA Wifi a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
                         sendOTAWifi(true);
@@ -1758,7 +1758,7 @@ class OtaTabState extends State<OtaTab> {
                     child: ElevatedButton(
                       onPressed: () {
                         registerActivity(
-                            command(deviceType),
+                            command(deviceName),
                             extractSerialNumber(deviceName),
                             'Se envio OTA ble a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
                         sendOTABLE(false);
@@ -1800,7 +1800,7 @@ class OtaTabState extends State<OtaTab> {
                     child: ElevatedButton(
                       onPressed: () {
                         registerActivity(
-                            command(deviceType),
+                            command(deviceName),
                             extractSerialNumber(deviceName),
                             'Se envio OTA ble a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
                         sendOTABLE(true);

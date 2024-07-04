@@ -6,6 +6,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
@@ -44,6 +45,7 @@ String nameOfWifi = '';
 var wifiIcon = Icons.wifi_off;
 bool connectionFlag = false;
 bool checkbleFlag = false;
+bool checkubiFlag = false;
 bool turnOn = false;
 bool trueStatus = false;
 bool nightMode = false;
@@ -54,6 +56,7 @@ String textState = '';
 String errorMessage = '';
 String errorSintax = '';
 Timer? bluetoothTimer;
+Timer? locationTimer;
 String actualTemp = '';
 bool awsInit = false;
 bool tempMap = false;
@@ -95,7 +98,7 @@ const bool xDebugMode = !xProfileMode && !xReleaseMode;
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
-String appVersionNumber = '24062402';
+String appVersionNumber = '24070400';
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
@@ -123,7 +126,7 @@ void showToast(String message) {
 Future<void> sendWifitoBle() async {
   MyDevice myDevice = MyDevice();
   String value = '$wifiName#$wifiPassword';
-  String deviceCommand = command(deviceType);
+  String deviceCommand = command(deviceName);
   printLog(deviceCommand);
   String dataToSend = '$deviceCommand[1]($value)';
   printLog(dataToSend);
@@ -139,22 +142,20 @@ Future<void> sendWifitoBle() async {
 }
 
 String command(String device) {
-  // printLog('Entro $device');
-  switch (device) {
-    case '022000':
-      return '022000_IOT';
-    case '027000':
-      return '027000_IOT';
-    case '015773':
-      return '015773_IOT';
-    case '041220':
-      return '041220_IOT';
-    case '020010':
-      return '020010_IOT';
-    case '024011':
-      return '024011_IOT';
-    default:
-      return '';
+  if (device.contains('Eléctrico')) {
+    return '022000_IOT';
+  } else if (device.contains('Gas')) {
+    return '027000_IOT';
+  } else if (device.contains('Detector')) {
+    return '015773_IOT';
+  } else if (device.contains('Radiador')) {
+    return '041220_IOT';
+  } else if (device.contains('Módulo')) {
+    return '020010_IOT';
+  } else if (device.contains('Patito')) {
+    return '019000_IOT';
+  } else {
+    return '';
   }
 }
 
@@ -590,6 +591,16 @@ void wifiText(BuildContext context) {
   );
 }
 
+void startLocationMonitoring() {
+  locationTimer =
+      Timer.periodic(const Duration(seconds: 1), (Timer t) => locationStatus());
+}
+
+void locationStatus() async {
+  await LocationService.isLocationServiceEnabled();
+}
+
+
 // CLASES //
 
 //*BLUETOOTH*//
@@ -1022,5 +1033,32 @@ class IconThumbSlider extends SliderComponentShape {
       center.dy - (tp.height / 2),
     );
     tp.paint(canvas, iconOffset);
+  }
+}
+
+//*-Location-*//Servicio
+
+class LocationService {
+  static const platform =
+      MethodChannel('com.sime.biocaldensmartlifefabrica/location');
+
+  static Future<bool> isLocationServiceEnabled() async {
+    try {
+      final bool isEnabled =
+          await platform.invokeMethod('isLocationServiceEnabled');
+      return isEnabled;
+    } on PlatformException catch (e) {
+      // Maneja la excepción aquí si es necesario
+      printLog('Error verificando ubi $e');
+      return false;
+    }
+  }
+
+  static Future<void> openLocationOptions() async {
+    try {
+      platform.invokeListMethod("openLocationSettings");
+    } on PlatformException catch (e) {
+      printLog('Error abriendo la ubicación $e');
+    }
   }
 }

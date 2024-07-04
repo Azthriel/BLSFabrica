@@ -184,7 +184,7 @@ class DetectorTabsState extends State<DetectorTabs> {
                                       var data = '015773_IOT[0](1)';
                                       try {
                                         registerActivity(
-                                            command(deviceType),
+                                            command(deviceName),
                                             extractSerialNumber(deviceName),
                                             'Se borró la NVS de este equipo...');
                                         myDevice.toolsUuid.write(data.codeUnits,
@@ -303,7 +303,7 @@ class CharState extends State<CharPage> {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  registerActivity(command(deviceType), textController.text,
+                  registerActivity(command(deviceName), textController.text,
                       'Se coloco el número de serie');
                   sendDataToDevice();
                 },
@@ -1272,7 +1272,32 @@ class LightPageState extends State<LightPage> {
               const SizedBox(
                 height: 30,
               ),
-              _buildCustomSlider(),
+              SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                    trackHeight: 50.0,
+                    thumbColor: const Color(0xfffbe4d8),
+                    thumbShape: IconThumbSlider(
+                        iconData: _sliderValue > 50
+                            ? Icons.light_mode
+                            : Icons.nightlight,
+                        thumbRadius: 25)),
+                child: Slider(
+                  value: _sliderValue,
+                  min: 0.0,
+                  max: 100.0,
+                  onChanged: (double value) {
+                    setState(() {
+                      _sliderValue = value;
+                    });
+                  },
+                  onChangeEnd: (value) {
+                    setState(() {
+                      _sliderValue = value;
+                    });
+                    _sendValueToBle(_sliderValue.toInt());
+                  },
+                ),
+              ),
               const SizedBox(
                 height: 30,
               ),
@@ -1284,40 +1309,6 @@ class LightPageState extends State<LightPage> {
             ],
           ),
         ));
-  }
-
-  Widget _buildCustomSlider() {
-    return SizedBox(
-      width: 300,
-      height: 30,
-      child: SliderTheme(
-        data: SliderTheme.of(context).copyWith(
-          activeTrackColor: const Color(0xff2b124c),
-          inactiveTrackColor: const Color(0xff854f6c),
-          trackHeight: 30.0,
-          thumbColor: const Color(0xff2b124c),
-          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 0.0),
-          overlayColor: const Color(0xff2b124c).withAlpha(32),
-          overlayShape: const RoundSliderOverlayShape(overlayRadius: 0.0),
-        ),
-        child: Slider(
-          value: _sliderValue,
-          min: 0.0,
-          max: 100.0,
-          onChanged: (double value) {
-            setState(() {
-              _sliderValue = value;
-            });
-          },
-          onChangeEnd: (value) {
-            setState(() {
-              _sliderValue = value;
-            });
-            _sendValueToBle(_sliderValue.toInt());
-          },
-        ),
-      ),
-    );
   }
 }
 
@@ -1464,15 +1455,15 @@ class CredsTabState extends State<CredsTab> {
                               deviceCert != null) {
                             printLog('Estan todos anashe');
                             registerActivity(
-                                command(deviceType),
+                                command(deviceName),
                                 extractSerialNumber(deviceName),
                                 'Se asigno credenciales de AWS al equipo');
                             setState(() {
                               sending = true;
                             });
-                            await writeLarge(amazonCA!, 0, deviceType);
-                            await writeLarge(deviceCert!, 1, deviceType);
-                            await writeLarge(privateKey!, 2, deviceType);
+                            await writeLarge(amazonCA!, 0, deviceName);
+                            await writeLarge(deviceCert!, 1, deviceName);
+                            await writeLarge(privateKey!, 2, deviceName);
                             setState(() {
                               sending = false;
                             });
@@ -1538,19 +1529,19 @@ class OTAState extends State<OTAPage> {
       //https://github.com/barberop/sime-domotica/raw/main/015773_IOT/OTA_FW/F/hv240214Asv240524D_F.bin
       if (otaSVController.text.contains('_F')) {
         url =
-            'https://github.com/barberop/sime-domotica/raw/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
+            'https://github.com/barberop/sime-domotica/raw/main/${command(deviceName)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
       } else {
         url =
-            'https://github.com/barberop/sime-domotica/raw/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}_F.bin';
+            'https://github.com/barberop/sime-domotica/raw/main/${command(deviceName)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}_F.bin';
       }
     } else if (value == 1) {
       //ota work
       url =
-          'https://github.com/barberop/sime-domotica/raw/main/${command(deviceType)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
+          'https://github.com/barberop/sime-domotica/raw/main/${command(deviceName)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
     } else if (value == 2) {
       //ota pic
       url =
-          'https://github.com/barberop/sime-domotica/raw/main/${command(deviceType)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}.hex';
+          'https://github.com/barberop/sime-domotica/raw/main/${command(deviceName)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}.hex';
       otaPIC = true;
     }
 
@@ -1594,7 +1585,7 @@ class OTAState extends State<OTAPage> {
       }
     } else if (value == 1) {
       url =
-          'https://github.com/barberop/sime-domotica/raw/main/${command(deviceType)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';
+          'https://github.com/barberop/sime-domotica/raw/main/${command(deviceName)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';
     }
 
     if (sizeWasSend == false) {
@@ -1614,7 +1605,7 @@ class OTAState extends State<OTAPage> {
         var firmware = await file.readAsBytes();
         firmwareGlobal = firmware;
 
-        String data = '${command(deviceType)}[3](${bytes.length})';
+        String data = '${command(deviceName)}[3](${bytes.length})';
         printLog(data);
         await myDevice.toolsUuid.write(data.codeUnits);
         sizeWasSend = true;
@@ -1878,7 +1869,7 @@ class OTAState extends State<OTAPage> {
                     child: ElevatedButton(
                       onPressed: () {
                         registerActivity(
-                            command(deviceType),
+                            command(deviceName),
                             extractSerialNumber(deviceName),
                             'Se envio OTA Wifi a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
                         sendOTAWifi(1);
@@ -1919,7 +1910,7 @@ class OTAState extends State<OTAPage> {
                     child: ElevatedButton(
                       onPressed: () {
                         registerActivity(
-                            command(deviceType),
+                            command(deviceName),
                             extractSerialNumber(deviceName),
                             'Se envio OTA Wifi a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
                         sendOTAWifi(0);
@@ -1967,7 +1958,7 @@ class OTAState extends State<OTAPage> {
                     child: ElevatedButton(
                       onPressed: () {
                         registerActivity(
-                            command(deviceType),
+                            command(deviceName),
                             extractSerialNumber(deviceName),
                             'Se envio OTA ble a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
                         sendOTABLE(1);
@@ -2009,7 +2000,7 @@ class OTAState extends State<OTAPage> {
                     child: ElevatedButton(
                       onPressed: () {
                         registerActivity(
-                            command(deviceType),
+                            command(deviceName),
                             extractSerialNumber(deviceName),
                             'Se envio OTA ble a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
                         sendOTABLE(0);
@@ -2054,7 +2045,7 @@ class OTAState extends State<OTAPage> {
               child: ElevatedButton(
                 onPressed: () {
                   registerActivity(
-                      command(deviceType),
+                      command(deviceName),
                       extractSerialNumber(deviceName),
                       'Se envio OTA PIC a el equipo.');
                   otaPIC = true;
