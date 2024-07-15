@@ -104,7 +104,13 @@ class CalefactoresTabState extends State<CalefactoresTab> {
           useMaterial3: true,
         ),
         home: DefaultTabController(
-          length: factoryMode ? 5 : 4,
+          length: accesoTotal || accesoLabo
+              ? factoryMode
+                  ? 5
+                  : 4
+              : accesoCS
+                  ? 3
+                  : 2,
           child: PopScope(
             canPop: false,
             onPopInvoked: (didPop) {
@@ -144,13 +150,22 @@ class CalefactoresTabState extends State<CalefactoresTab> {
                   unselectedLabelColor: const Color(0xff190019),
                   indicatorColor: const Color(0xffdfb6b2),
                   tabs: [
-                    const Tab(icon: Icon(Icons.settings)),
-                    const Tab(icon: Icon(Icons.star)),
-                    const Tab(icon: Icon(Icons.thermostat)),
-                    if (factoryMode) ...[
-                      const Tab(icon: Icon(Icons.perm_identity))
-                    ],
-                    const Tab(icon: Icon(Icons.send)),
+                    if (accesoTotal || accesoLabo) ...[
+                      const Tab(icon: Icon(Icons.settings)),
+                      const Tab(icon: Icon(Icons.star)),
+                      const Tab(icon: Icon(Icons.thermostat)),
+                      if (factoryMode) ...[
+                        const Tab(icon: Icon(Icons.perm_identity))
+                      ],
+                      const Tab(icon: Icon(Icons.send)),
+                    ] else if (accesoCS) ...[
+                      const Tab(icon: Icon(Icons.thermostat)),
+                      const Tab(icon: Icon(Icons.star)),
+                      const Tab(icon: Icon(Icons.send)),
+                    ] else ...[
+                      const Tab(icon: Icon(Icons.thermostat)),
+                      const Tab(icon: Icon(Icons.send)),
+                    ]
                   ],
                 ),
                 actions: <Widget>[
@@ -168,11 +183,20 @@ class CalefactoresTabState extends State<CalefactoresTab> {
               ),
               body: TabBarView(
                 children: [
-                  const ToolsPage(),
-                  const ParamsTab(),
-                  const TempTab(),
-                  if (factoryMode) ...[const CredsTab()],
-                  const OtaTab(),
+                  if (accesoTotal || accesoLabo) ...[
+                    const ToolsPage(),
+                    const ParamsTab(),
+                    const TempTab(),
+                    if (factoryMode) ...[const CredsTab()],
+                    const OtaTab(),
+                  ] else if (accesoCS) ...[
+                    const TempTab(),
+                    const ParamsTab(),
+                    const OtaTab(),
+                  ] else ...[
+                    const TempTab(),
+                    const OtaTab(),
+                  ]
                 ],
               ),
             ),
@@ -430,39 +454,44 @@ class ParamsTabState extends State<ParamsTab> {
                 ),
                 for (int i = 0; i < secondaryAdmins.length; i++) ...[
                   const Divider(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      const CircleAvatar(
-                        radius: 15,
-                        backgroundColor: Color(0xfffbe4d8),
-                        child: Icon(Icons.person, color: Color(0xff854f6c)),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              registerActivity(
+                                  command(deviceName),
+                                  serialNumber,
+                                  'Se elimino el admin ${secondaryAdmins[i]} del equipo');
+                              setState(() {
+                                secondaryAdmins.remove(secondaryAdmins[i]);
+                              });
+                              putSecondaryAdmins(
+                                  service,
+                                  command(deviceName),
+                                  extractSerialNumber(deviceName),
+                                  secondaryAdmins);
+                            },
+                            icon: const Icon(Icons.delete, color: Colors.grey),
+                          ),
+                          Text(
+                            secondaryAdmins[i],
+                            style: (const TextStyle(
+                                fontSize: 20.0,
+                                color: Color(0xFFdfb6b2),
+                                fontWeight: FontWeight.normal)),
+                          ),
+                        ],
                       ),
-                      const SizedBox(
-                        width: 5,
-                      ),
-                      Text(
-                        secondaryAdmins[i],
-                        style: (const TextStyle(
-                            fontSize: 20.0,
-                            color: Color(0xFFdfb6b2),
-                            fontWeight: FontWeight.normal)),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        onPressed: () {
-                          registerActivity(command(deviceName), serialNumber,
-                              'Se elimino el admin ${secondaryAdmins[i]} del equipo');
-                          setState(() {
-                            secondaryAdmins.remove(secondaryAdmins[i]);
-                          });
-                          putSecondaryAdmins(service, command(deviceName),
-                              extractSerialNumber(deviceName), secondaryAdmins);
-                        },
-                        icon: const Icon(Icons.delete, color: Colors.grey),
-                      ),
-                    ],
-                  )
+                    ),
+                  ),
+                  const SizedBox(
+                    width: 5,
+                  ),
                 ],
                 const Divider(),
               ],
@@ -808,12 +837,15 @@ class TempTabState extends State<TempTab> {
             ),
             SliderTheme(
               data: SliderTheme.of(context).copyWith(
-                trackHeight: 50.0,
-                thumbColor: const Color(0xfffbe4d8),
-                thumbShape: const RoundSliderThumbShape(
-                  enabledThumbRadius: 0.0,
-                ),
-              ),
+                  trackHeight: 50.0,
+                  thumbColor: const Color(0xfffbe4d8),
+                  thumbShape: IconThumbSlider(
+                      iconData: trueStatus
+                          ? deviceType == '027000'
+                              ? Icons.local_fire_department
+                              : Icons.flash_on_rounded
+                          : Icons.check,
+                      thumbRadius: 25)),
               child: Slider(
                 value: tempValue,
                 onChanged: (value) {
@@ -1352,7 +1384,13 @@ class CredsTabState extends State<CredsTab> {
               SizedBox(
                 width: 300,
                 child: sending
-                    ? const LinearProgressIndicator()
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset('assets/Vaca.webp'),
+                          const LinearProgressIndicator(),
+                        ],
+                      )
                     : ElevatedButton(
                         onPressed: () async {
                           printLog(amazonCA);

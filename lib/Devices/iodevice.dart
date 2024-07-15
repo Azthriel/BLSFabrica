@@ -109,7 +109,7 @@ class IODevicesTabState extends State<IODevicesTab> {
           useMaterial3: true,
         ),
         home: DefaultTabController(
-          length: 4,
+          length: accesoTotal || accesoLabo ? 5 : 2,
           child: PopScope(
             canPop: false,
             onPopInvoked: (didPop) {
@@ -144,15 +144,21 @@ class IODevicesTabState extends State<IODevicesTab> {
                 backgroundColor: const Color(0xFF522B5B),
                 foregroundColor: const Color(0xfffbe4d8),
                 title: Text(deviceName),
-                bottom: const TabBar(
-                  labelColor: Color(0xffdfb6b2),
-                  unselectedLabelColor: Color(0xff190019),
-                  indicatorColor: Color(0xffdfb6b2),
+                bottom: TabBar(
+                  labelColor: const Color(0xffdfb6b2),
+                  unselectedLabelColor: const Color(0xff190019),
+                  indicatorColor: const Color(0xffdfb6b2),
                   tabs: [
-                    Tab(icon: Icon(Icons.settings)),
-                    Tab(icon: Icon(Icons.settings_accessibility)),
-                    Tab(icon: Icon(Icons.perm_identity)),
-                    Tab(icon: Icon(Icons.send)),
+                    if (accesoTotal || accesoLabo) ...[
+                      const Tab(icon: Icon(Icons.settings)),
+                      const Tab(icon: Icon(Icons.settings_accessibility)),
+                      const Tab(icon: Icon(Icons.pending_actions_rounded)),
+                      const Tab(icon: Icon(Icons.perm_identity)),
+                      const Tab(icon: Icon(Icons.send)),
+                    ] else ...[
+                      const Tab(icon: Icon(Icons.settings_accessibility)),
+                      const Tab(icon: Icon(Icons.send)),
+                    ]
                   ],
                 ),
                 actions: <Widget>[
@@ -168,12 +174,18 @@ class IODevicesTabState extends State<IODevicesTab> {
                   ),
                 ],
               ),
-              body: const TabBarView(
+              body: TabBarView(
                 children: [
-                  InfoTab(),
-                  SetTab(),
-                  CredsTab(),
-                  OtaTab(),
+                  if (accesoTotal || accesoLabo) ...[
+                    const InfoTab(),
+                    const SetTab(),
+                    const BurneoTab(),
+                    const CredsTab(),
+                    const OtaTab(),
+                  ] else ...[
+                    const SetTab(),
+                    const OtaTab(),
+                  ]
                 ],
               ),
             ),
@@ -286,11 +298,12 @@ class InfoTabState extends State<InfoTab> {
               const SizedBox(height: 15),
               const Text.rich(
                 TextSpan(
-                    text: 'Version de hardware del modulo IOT:',
-                    style: (TextStyle(
-                        fontSize: 20.0,
-                        color: Color(0xfffbe4d8),
-                        fontWeight: FontWeight.bold))),
+                  text: 'Version de hardware del modulo IOT:',
+                  style: (TextStyle(
+                      fontSize: 20.0,
+                      color: Color(0xfffbe4d8),
+                      fontWeight: FontWeight.bold)),
+                ),
               ),
               Text.rich(
                 TextSpan(
@@ -585,6 +598,209 @@ class SetTabState extends State<SetTab> {
   }
 }
 
+//BURNEO Tab //Control pin and voltage
+
+class BurneoTab extends StatefulWidget {
+  const BurneoTab({super.key});
+  @override
+  State<BurneoTab> createState() => BurneoTabState();
+}
+
+class BurneoTabState extends State<BurneoTab> {
+  bool testingIN = false;
+  bool testingOUT = false;
+  List<bool> stateIN = List<bool>.filled(4, false, growable: false);
+  List<bool> stateOUT = List<bool>.filled(4, false, growable: false);
+
+  void mandarBurneo() async {
+    printLog('mande a la google sheet');
+
+    const String url =
+        'https://script.google.com/macros/s/AKfycbyESEF-o_iBAotpLi7gszSfelJVLlJbrgSVSiMYWYaHfC8io5fJ2tlAKkGpH7iJYK3p0Q/exec';
+
+    final response = await dio.get(url, queryParameters: {
+      'productCode': command(deviceName),
+      'serialNumber': extractSerialNumber(deviceName),
+      'Legajo': legajoConectado,
+      'in0': stateIN[0],
+      'in1': stateIN[1],
+      'in2': stateIN[2],
+      'in3': stateIN[3],
+      'out0': stateOUT[0],
+      'out1': stateOUT[1],
+      'out2': stateOUT[2],
+      'out3': stateOUT[3],
+      'date': DateTime.now().toIso8601String()
+    });
+    if (response.statusCode == 200) {
+      printLog('Anashe');
+    } else {
+      printLog('!=200 ${response.statusCode}');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        backgroundColor: const Color(0xff190019),
+        body: Center(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.vertical,
+            child: Column(
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    registerActivity(
+                        command(deviceName),
+                        extractSerialNumber(deviceName),
+                        'Se envio el testeo de entradas');
+                    for (int index = 0; index < 4; index++) {
+                      String fun = '${command(deviceName)}[13]($index#1)';
+                      myDevice.toolsUuid.write(fun.codeUnits);
+                    }
+                    printLog('Ya se cambiaron todos los pines a entrada');
+                    setState(() {
+                      testingIN = true;
+                    });
+                  },
+                  child: const Text('Probar entradas'),
+                ),
+                if (testingIN) ...[
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  for (int i = 0; i < 4; i++) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('Funcionamiento Entrada$i: ',
+                            style: const TextStyle(
+                                fontSize: 15.0,
+                                color: Color(0xfffbe4d8),
+                                fontWeight: FontWeight.normal)),
+                        Switch(
+                          activeColor: const Color(0xfffbe4d8),
+                          activeTrackColor: const Color(0xff854f6c),
+                          inactiveThumbColor: const Color(0xff854f6c),
+                          inactiveTrackColor: const Color(0xfffbe4d8),
+                          trackOutlineColor:
+                              const MaterialStatePropertyAll(Color(0xff854f6c)),
+                          thumbIcon: MaterialStateProperty.resolveWith<Icon?>(
+                            (Set<MaterialState> states) {
+                              if (states.contains(MaterialState.selected)) {
+                                return const Icon(Icons.check,
+                                    color: Color(0xff854f6c));
+                              } else {
+                                return const Icon(Icons.close,
+                                    color: Color(0xfffbe4d8));
+                              }
+                            },
+                          ),
+                          value: stateIN[i],
+                          onChanged: (value) {
+                            setState(() {
+                              stateIN[i] = value;
+                            });
+                            printLog(stateIN);
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+                const SizedBox(
+                  height: 10,
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (testingIN) {
+                      registerActivity(
+                          command(deviceName),
+                          extractSerialNumber(deviceName),
+                          'Se envio el testeo de salidas');
+                      for (int index = 0; index < 4; index++) {
+                        String fun = '${command(deviceName)}[13]($index#0)';
+                        myDevice.toolsUuid.write(fun.codeUnits);
+                      }
+                      printLog('Ya se cambiaron todos los pines a salida');
+                      String fun1 = '${command(deviceName)}[15](0)';
+                      myDevice.toolsUuid.write(fun1.codeUnits);
+                      setState(() {
+                        testingOUT = true;
+                      });
+                    } else {
+                      showToast('Primero probar entradas');
+                    }
+                  },
+                  child: const Text('Probar salidas'),
+                ),
+                if (testingOUT) ...[
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  for (int i = 0; i < 4; i++) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('Funcionamiento Salida$i: ',
+                            style: const TextStyle(
+                                fontSize: 15.0,
+                                color: Color(0xfffbe4d8),
+                                fontWeight: FontWeight.normal)),
+                        Switch(
+                          activeColor: const Color(0xfffbe4d8),
+                          activeTrackColor: const Color(0xff854f6c),
+                          inactiveThumbColor: const Color(0xff854f6c),
+                          inactiveTrackColor: const Color(0xfffbe4d8),
+                          trackOutlineColor:
+                              const MaterialStatePropertyAll(Color(0xff854f6c)),
+                          thumbIcon: MaterialStateProperty.resolveWith<Icon?>(
+                            (Set<MaterialState> states) {
+                              if (states.contains(MaterialState.selected)) {
+                                return const Icon(Icons.check,
+                                    color: Color(0xff854f6c));
+                              } else {
+                                return const Icon(Icons.close,
+                                    color: Color(0xfffbe4d8));
+                              }
+                            },
+                          ),
+                          value: stateIN[i],
+                          onChanged: (value) {
+                            setState(() {
+                              stateOUT[i] = value;
+                            });
+                            printLog(stateOUT);
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+                ElevatedButton(
+                  onPressed: () {
+                    if (testingIN && testingOUT) {
+                      registerActivity(
+                          command(deviceName),
+                          extractSerialNumber(deviceName),
+                          'Se envio el burneo');
+                      printLog('Se envío burneo');
+                      mandarBurneo();
+                      String fun2 = '${command(deviceName)}[15](1)';
+                      myDevice.toolsUuid.write(fun2.codeUnits);
+                    } else {
+                      showToast('Primero probar entradas y salidas');
+                    }
+                  },
+                  child: const Text('Enviar burneo'),
+                ),
+              ],
+            ),
+          ),
+        ));
+  }
+}
+
 //CREDENTIAL Tab //Add thing certificates
 
 class CredsTab extends StatefulWidget {
@@ -716,7 +932,13 @@ class CredsTabState extends State<CredsTab> {
               SizedBox(
                 width: 300,
                 child: sending
-                    ? const LinearProgressIndicator()
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset('assets/Vaca.webp'),
+                          const LinearProgressIndicator(),
+                        ],
+                      )
                     : ElevatedButton(
                         onPressed: () async {
                           printLog(amazonCA);

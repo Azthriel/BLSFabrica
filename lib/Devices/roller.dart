@@ -103,7 +103,11 @@ class RollerTabState extends State<RollerTab> {
           useMaterial3: true,
         ),
         home: DefaultTabController(
-          length: factoryMode ? 5 : 4,
+          length: accesoTotal || accesoLabo
+              ? factoryMode
+                  ? 5
+                  : 4
+              : 2,
           child: PopScope(
             canPop: false,
             onPopInvoked: (didPop) {
@@ -143,15 +147,18 @@ class RollerTabState extends State<RollerTab> {
                   unselectedLabelColor: const Color(0xff190019),
                   indicatorColor: const Color(0xffdfb6b2),
                   tabs: [
-                    const Tab(icon: Icon(Icons.settings)),
-                    const Tab(icon: Icon(Icons.star)),
-                    const Tab(
-                      icon: Icon(Icons.rotate_left_outlined),
-                    ),
-                    if (factoryMode) ...[
-                      const Tab(icon: Icon(Icons.perm_identity))
-                    ],
-                    const Tab(icon: Icon(Icons.send)),
+                    if (accesoTotal || accesoLabo) ...[
+                      const Tab(icon: Icon(Icons.settings)),
+                      const Tab(icon: Icon(Icons.star)),
+                      const Tab(icon: Icon(Icons.rotate_left_outlined)),
+                      if (factoryMode) ...[
+                        const Tab(icon: Icon(Icons.perm_identity))
+                      ],
+                      const Tab(icon: Icon(Icons.send)),
+                    ] else ...[
+                      const Tab(icon: Icon(Icons.rotate_left_outlined)),
+                      const Tab(icon: Icon(Icons.send)),
+                    ]
                   ],
                 ),
                 actions: <Widget>[
@@ -169,11 +176,16 @@ class RollerTabState extends State<RollerTab> {
               ),
               body: TabBarView(
                 children: [
-                  const ToolsPage(),
-                  const ParamsTab(),
-                  const RollcontrolTab(),
-                  if (factoryMode) ...[const CredsTab()],
-                  const OtaTab(),
+                  if (accesoTotal || accesoLabo) ...[
+                    const ToolsPage(),
+                    const ParamsTab(),
+                    const RollcontrolTab(),
+                    if (factoryMode) ...[const CredsTab()],
+                    const OtaTab(),
+                  ] else ...[
+                    const RollcontrolTab(),
+                    const OtaTab(),
+                  ]
                 ],
               ),
             ),
@@ -1171,6 +1183,7 @@ class CredsTabState extends State<CredsTab> {
   String? amazonCA;
   String? privateKey;
   String? deviceCert;
+  bool sending = false;
 
   @override
   Widget build(BuildContext context) {
@@ -1285,43 +1298,57 @@ class CredsTabState extends State<CredsTab> {
               ),
               SizedBox(
                 width: 300,
-                child: ElevatedButton(
-                  onPressed: () {
-                    printLog(amazonCA);
-                    printLog(privateKey);
-                    printLog(deviceCert);
+                child: sending
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset('assets/Vaca.webp'),
+                          const LinearProgressIndicator(),
+                        ],
+                      )
+                    : ElevatedButton(
+                        onPressed: () async {
+                          printLog(amazonCA);
+                          printLog(privateKey);
+                          printLog(deviceCert);
 
-                    if (amazonCA != null &&
-                        privateKey != null &&
-                        deviceCert != null) {
-                      printLog('Estan todos anashe');
-                      registerActivity(
-                          command(deviceName),
-                          extractSerialNumber(deviceName),
-                          'Se asigno credenciales de AWS al equipo');
-                      writeLarge(amazonCA!, 0, deviceName);
-                      writeLarge(deviceCert!, 1, deviceName);
-                      writeLarge(privateKey!, 2, deviceName);
-                    }
-                  },
-                  child: const Center(
-                    child: Column(
-                      children: [
-                        SizedBox(height: 10),
-                        Icon(
-                          Icons.perm_identity,
-                          size: 16,
+                          if (amazonCA != null &&
+                              privateKey != null &&
+                              deviceCert != null) {
+                            printLog('Estan todos anashe');
+                            registerActivity(
+                                command(deviceName),
+                                extractSerialNumber(deviceName),
+                                'Se asigno credenciales de AWS al equipo');
+                            setState(() {
+                              sending = true;
+                            });
+                            await writeLarge(amazonCA!, 0, deviceName);
+                            await writeLarge(deviceCert!, 1, deviceName);
+                            await writeLarge(privateKey!, 2, deviceName);
+                            setState(() {
+                              sending = false;
+                            });
+                          }
+                        },
+                        child: const Center(
+                          child: Column(
+                            children: [
+                              SizedBox(height: 10),
+                              Icon(
+                                Icons.perm_identity,
+                                size: 16,
+                              ),
+                              SizedBox(height: 10),
+                              Text(
+                                'Enviar certificados',
+                                textAlign: TextAlign.center,
+                              ),
+                              SizedBox(height: 10),
+                            ],
+                          ),
                         ),
-                        SizedBox(height: 10),
-                        Text(
-                          'Enviar certificados',
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: 10),
-                      ],
-                    ),
-                  ),
-                ),
+                      ),
               ),
             ],
           ),

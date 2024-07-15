@@ -3,11 +3,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
+import 'package:csv/csv.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:biocaldensmartlifefabrica/master.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-// import 'package:http/http.dart' as http;
+import 'package:share/share.dart';
 
 class PatitoTab extends StatefulWidget {
   const PatitoTab({super.key});
@@ -89,92 +90,103 @@ class PatitoTabTabState extends State<PatitoTab> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        theme: ThemeData(
-          primaryColor: const Color(0xFF2B124C),
-          primaryColorLight: const Color(0xFF522B5B),
-          textSelectionTheme: const TextSelectionThemeData(
-            selectionColor: Color(0xFFdfb6b2),
-            selectionHandleColor: Color(0xFFdfb6b2),
-          ),
-          bottomSheetTheme: const BottomSheetThemeData(
-              surfaceTintColor: Colors.transparent,
-              backgroundColor: Colors.transparent),
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF2B124C),
-          ),
-          useMaterial3: true,
+      theme: ThemeData(
+        primaryColor: const Color(0xFF2B124C),
+        primaryColorLight: const Color(0xFF522B5B),
+        textSelectionTheme: const TextSelectionThemeData(
+          selectionColor: Color(0xFFdfb6b2),
+          selectionHandleColor: Color(0xFFdfb6b2),
         ),
-        home: DefaultTabController(
-          length: 4,
-          child: PopScope(
-            canPop: false,
-            onPopInvoked: (didPop) {
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) {
-                  return AlertDialog(
-                    content: Row(
-                      children: [
-                        const CircularProgressIndicator(),
-                        Container(
-                            margin: const EdgeInsets.only(left: 15),
-                            child: const Text("Desconectando...")),
-                      ],
-                    ),
-                  );
-                },
-              );
-              Future.delayed(const Duration(seconds: 2), () async {
-                printLog('aca estoy');
-                await myDevice.device.disconnect();
-                navigatorKey.currentState?.pop();
-                navigatorKey.currentState?.pushReplacementNamed('/menu');
-              });
-
-              return; // Retorna según la lógica de tu app
-            },
-            child: Scaffold(
-              resizeToAvoidBottomInset: false,
-              appBar: AppBar(
-                backgroundColor: const Color(0xFF522B5B),
-                foregroundColor: const Color(0xfffbe4d8),
-                title: Text(deviceName),
-                bottom: const TabBar(
-                  labelColor: Color(0xffdfb6b2),
-                  unselectedLabelColor: Color(0xff190019),
-                  indicatorColor: Color(0xffdfb6b2),
-                  tabs: [
-                    Tab(icon: Icon(Icons.settings)),
-                    Tab(icon: Icon(Icons.list)),
-                    Tab(icon: Icon(Icons.perm_identity)),
-                    Tab(icon: Icon(Icons.send)),
-                  ],
-                ),
-                actions: <Widget>[
-                  IconButton(
-                    icon: Icon(
-                      wifiIcon,
-                      size: 24.0,
-                      semanticLabel: 'Icono de wifi',
-                    ),
-                    onPressed: () {
-                      wifiText(context);
-                    },
+        bottomSheetTheme: const BottomSheetThemeData(
+            surfaceTintColor: Colors.transparent,
+            backgroundColor: Colors.transparent),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF2B124C),
+        ),
+        useMaterial3: true,
+      ),
+      home: DefaultTabController(
+        length: accesoTotal || accesoLabo ? 4 : 2,
+        child: PopScope(
+          canPop: false,
+          onPopInvoked: (didPop) {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) {
+                return AlertDialog(
+                  content: Row(
+                    children: [
+                      const CircularProgressIndicator(),
+                      Container(
+                          margin: const EdgeInsets.only(left: 15),
+                          child: const Text("Desconectando...")),
+                    ],
                   ),
+                );
+              },
+            );
+            Future.delayed(const Duration(seconds: 2), () async {
+              printLog('aca estoy');
+              await myDevice.device.disconnect();
+              navigatorKey.currentState?.pop();
+              navigatorKey.currentState?.pushReplacementNamed('/menu');
+            });
+
+            return; // Retorna según la lógica de tu app
+          },
+          child: Scaffold(
+            resizeToAvoidBottomInset: false,
+            appBar: AppBar(
+              backgroundColor: const Color(0xFF522B5B),
+              foregroundColor: const Color(0xfffbe4d8),
+              title: Text(deviceName),
+              bottom: TabBar(
+                labelColor: const Color(0xffdfb6b2),
+                unselectedLabelColor: const Color(0xff190019),
+                indicatorColor: const Color(0xffdfb6b2),
+                tabs: [
+                  if (accesoTotal || accesoLabo) ...[
+                    const Tab(icon: Icon(Icons.settings)),
+                    const Tab(icon: Icon(Icons.list)),
+                    const Tab(icon: Icon(Icons.perm_identity)),
+                    const Tab(icon: Icon(Icons.send)),
+                  ] else ...[
+                    const Tab(icon: Icon(Icons.list)),
+                    const Tab(icon: Icon(Icons.send)),
+                  ]
                 ],
               ),
-              body: const TabBarView(
-                children: [
-                  ToolsPage(),
-                  ListTab(),
-                  CredsTab(),
-                  OtaTab(),
-                ],
-              ),
+              actions: <Widget>[
+                IconButton(
+                  icon: Icon(
+                    wifiIcon,
+                    size: 24.0,
+                    semanticLabel: 'Icono de wifi',
+                  ),
+                  onPressed: () {
+                    wifiText(context);
+                  },
+                ),
+              ],
+            ),
+            body: TabBarView(
+              children: [
+                if (accesoTotal || accesoLabo) ...[
+                  const ToolsPage(),
+                  const ListTab(),
+                  const CredsTab(),
+                  const OtaTab(),
+                ] else ...[
+                  const ListTab(),
+                  const OtaTab(),
+                ]
+              ],
             ),
           ),
-        ));
+        ),
+      ),
+    );
   }
 }
 
@@ -334,7 +346,9 @@ class ListTabState extends State<ListTab> {
   List<double> giroY = List<double>.filled(1000, 0.0, growable: true);
   List<double> giroZ = List<double>.filled(1000, 0.0, growable: true);
   List<DateTime> dates =
-      List<DateTime>.generate(1000, (index) => DateTime.now(), growable: true);
+      List<DateTime>.filled(1000, DateTime.now(), growable: true);
+  bool recording = false;
+  List<List<dynamic>> recordedData = [];
 
   @override
   void initState() {
@@ -354,6 +368,18 @@ class ListTabState extends State<ListTab> {
         addData(giroZ, transformToDouble(event.sublist(20)));
         addDate(dates, DateTime.now());
       });
+
+      if (recording) {
+        recordedData.add([
+          DateTime.now(),
+          transformToDouble(event.sublist(0, 4)),
+          transformToDouble(event.sublist(4, 8)),
+          transformToDouble(event.sublist(8, 12)),
+          transformToDouble(event.sublist(12, 16)),
+          transformToDouble(event.sublist(16, 20)),
+          transformToDouble(event.sublist(20))
+        ]);
+      }
     });
     myDevice.device.cancelWhenDisconnected(patitoSub);
   }
@@ -390,6 +416,21 @@ class ListTabState extends State<ListTab> {
     }
   }
 
+  void saveDataToCsv() async {
+    List<List<dynamic>> rows = [
+      ["Timestamp", "AccX", "AccY", "AccZ", "GiroX", "GiroY", "GiroZ"]
+    ];
+    rows.addAll(recordedData);
+
+    String csvData = const ListToCsvConverter().convert(rows);
+    final directory = await getApplicationDocumentsDirectory();
+    final pathOfTheFileToWrite = '${directory.path}/recorded_data.csv';
+    File file = File(pathOfTheFileToWrite);
+    await file.writeAsString(csvData);
+
+    await Share.shareFiles([file.path], text: 'CSV PATITO');
+  }
+
   @override
   void dispose() {
     super.dispose();
@@ -403,6 +444,27 @@ class ListTabState extends State<ListTab> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            IconButton(
+                onPressed: () {
+                  setState(() {
+                    recording = !recording;
+                  });
+                  if (!recording) {
+                    saveDataToCsv();
+                    recordedData.clear();
+                  }
+                },
+                icon: recording
+                    ? const Icon(
+                        Icons.pause,
+                        size: 35,
+                        color: Color(0xffdfb6b2),
+                      )
+                    : const Icon(
+                        Icons.play_arrow,
+                        size: 35,
+                        color: Color(0xffdfb6b2),
+                      )),
             createChart('Aceleración X', dates, aceleracionX),
             createChart('Giro X', dates, giroX),
             createChart('Aceleración Y', dates, aceleracionY),
@@ -675,7 +737,13 @@ class CredsTabState extends State<CredsTab> {
               SizedBox(
                 width: 300,
                 child: sending
-                    ? const LinearProgressIndicator()
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset('assets/Vaca.webp'),
+                          const LinearProgressIndicator(),
+                        ],
+                      )
                     : ElevatedButton(
                         onPressed: () async {
                           printLog(amazonCA);

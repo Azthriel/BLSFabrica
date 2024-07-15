@@ -43,41 +43,83 @@ class MenuPageState extends State<MenuPage> {
         useMaterial3: true,
       ),
       home: DefaultTabController(
-        length: 5,
+        length: accesoTotal
+            ? 5
+            : accesoLabo
+                ? 3
+                : 2,
         child: Scaffold(
           backgroundColor: const Color(0xff190019),
           appBar: AppBar(
             backgroundColor: const Color(0xFF522B5B),
             foregroundColor: const Color(0xfffbe4d8),
             title: const Text('BSL Fábrica'),
-            bottom: const TabBar(
-              labelColor: Color(0xffdfb6b2),
-              unselectedLabelColor: Color(0xff190019),
-              indicatorColor: Color(0xffdfb6b2),
+            bottom: TabBar(
+              labelColor: const Color(0xffdfb6b2),
+              unselectedLabelColor: const Color(0xff190019),
+              indicatorColor: const Color(0xffdfb6b2),
               tabs: [
-                Tab(
-                  icon: Icon(Icons.bluetooth_searching),
-                ),
-                Tab(
-                  icon: Icon(Icons.assignment),
-                ),
-                Tab(
-                  icon: Icon(Icons.webhook_outlined),
-                ),
-                Tab(
-                  icon: Icon(Icons.thermostat_auto),
-                ),
-                Tab(icon: Icon(Icons.send)),
+                if (accesoTotal) ...[
+                  const Tab(
+                    icon: Icon(Icons.bluetooth_searching),
+                  ),
+                  const Tab(
+                    icon: Icon(Icons.assignment),
+                  ),
+                  const Tab(
+                    icon: Icon(Icons.webhook_outlined),
+                  ),
+                  const Tab(
+                    icon: Icon(Icons.thermostat_auto),
+                  ),
+                  const Tab(icon: Icon(Icons.send)),
+                ] else if (accesoLabo) ...[
+                  const Tab(
+                    icon: Icon(Icons.bluetooth_searching),
+                  ),
+                  const Tab(
+                    icon: Icon(Icons.assignment),
+                  ),
+                  const Tab(
+                    icon: Icon(Icons.webhook_outlined),
+                  ),
+                ] else if (accesoCS) ...[
+                  const Tab(
+                    icon: Icon(Icons.bluetooth_searching),
+                  ),
+                  const Tab(
+                    icon: Icon(Icons.webhook_outlined),
+                  ),
+                ] else ...[
+                  const Tab(
+                    icon: Icon(Icons.bluetooth_searching),
+                  ),
+                  const Tab(
+                    icon: Icon(Icons.assignment),
+                  ),
+                ]
               ],
             ),
           ),
-          body: const TabBarView(
+          body: TabBarView(
             children: [
-              ScanTab(),
-              ControlTab(),
-              ToolsAWS(),
-              RegbankTab(),
-              Ota2Tab(),
+              if (accesoTotal) ...[
+                const ScanTab(),
+                const ControlTab(),
+                const ToolsAWS(),
+                const RegbankTab(),
+                const Ota2Tab(),
+              ] else if (accesoLabo) ...[
+                const ScanTab(),
+                const ControlTab(),
+                const ToolsAWS(),
+              ] else if (accesoCS) ...[
+                const ScanTab(),
+                const ToolsAWS(),
+              ] else ...[
+                const ScanTab(),
+                const ControlTab(),
+              ]
             ],
           ),
         ),
@@ -125,6 +167,7 @@ class ScanTabState extends State<ScanTab> {
               'Módulo',
               'Roll',
               'Patito',
+              'Domótica'
             ],
             timeout: const Duration(seconds: 30),
             androidUsesFineLocation: true,
@@ -179,6 +222,10 @@ class ScanTabState extends State<ScanTab> {
               alreadySubIO = false;
               printLog(
                   'Razon: ${myDevice.device.disconnectReason?.description}');
+              registerActivity(
+                  command(device.platformName),
+                  extractSerialNumber(device.platformName),
+                  'Se desconecto del equipo ${device.platformName}');
               navigatorKey.currentState?.pushReplacementNamed('/menu');
               break;
             }
@@ -2235,6 +2282,8 @@ class LoadState extends State<LoadingPage> {
     precharge().then((precharge) {
       if (precharge == true) {
         showToast('Dispositivo conectado exitosamente');
+        registerActivity(command(deviceName), extractSerialNumber(deviceName),
+            'Se conecto al equipo $deviceName');
         if (deviceType == '022000' ||
             deviceType == '027000' ||
             deviceType == '041220') {

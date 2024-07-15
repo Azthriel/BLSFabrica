@@ -26,6 +26,7 @@ class LoginPageState extends State<LoginPage> {
         if (data['pass'] == passController.text.trim()) {
           showToast('Inicio de sesión exitoso');
           legajoConectado = legajoController.text.trim();
+          await verificarAccesos(legajoConectado);
           navigatorKey.currentState?.pushReplacementNamed('/menu');
           printLog('Inicio de sesión exitoso');
         } else {

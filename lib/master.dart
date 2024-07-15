@@ -89,6 +89,10 @@ String secAdmDate = '';
 String atDate = '';
 List<String> secondaryAdmins = [];
 
+bool accesoTotal = false;
+bool accesoLabo = false;
+bool accesoCS = false;
+
 // Si esta en modo profile.
 const bool xProfileMode = bool.fromEnvironment('dart.vm.profile');
 // Si esta en modo release.
@@ -98,7 +102,7 @@ const bool xDebugMode = !xProfileMode && !xReleaseMode;
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
-String appVersionNumber = '24070400';
+String appVersionNumber = '24071500';
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
@@ -598,6 +602,31 @@ void startLocationMonitoring() {
 
 void locationStatus() async {
   await LocationService.isLocationServiceEnabled();
+}
+
+Future<void> verificarAccesos(String legajo) async {
+  try {
+    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+        .collection('Legajos')
+        .doc('Accesos')
+        .get();
+    if (documentSnapshot.exists) {
+      Map<String, dynamic> data =
+          documentSnapshot.data() as Map<String, dynamic>;
+      List<dynamic> fun0 = data['Total'] ?? [];
+      List<dynamic> fun1 = data['Laboratorio'] ?? [];
+      List<dynamic> fun2 = data['Customer Service'] ?? [];
+      accesoTotal = fun0.contains(legajo);
+      accesoLabo = fun1.contains(legajo);
+      accesoCS = fun2.contains(legajo);
+
+      printLog('Total: $accesoTotal');
+      printLog('Labo: $accesoLabo');
+      printLog('CS: $accesoCS');
+    }
+  } catch (e) {
+    printLog('Error verificando accesos $e');
+  }
 }
 
 

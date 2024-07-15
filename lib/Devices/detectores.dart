@@ -133,7 +133,15 @@ class DetectorTabsState extends State<DetectorTabs> {
           useMaterial3: true,
         ),
         home: DefaultTabController(
-          length: factoryMode ? 7 : 4,
+          length: accesoTotal
+              ? factoryMode
+                  ? 7
+                  : 3
+              : accesoLabo
+                  ? factoryMode
+                      ? 5
+                      : 3
+                  : 2,
           child: Scaffold(
             resizeToAvoidBottomInset: false,
             appBar: AppBar(
@@ -145,15 +153,32 @@ class DetectorTabsState extends State<DetectorTabs> {
                   unselectedLabelColor: const Color(0xff190019),
                   indicatorColor: const Color(0xffdfb6b2),
                   tabs: [
-                    const Tab(icon: Icon(Icons.numbers)),
-                    if (factoryMode) ...[
-                      const Tab(icon: Icon(Icons.settings)),
-                      const Tab(icon: Icon(Icons.tune)),
-                      const Tab(icon: Icon(Icons.catching_pokemon)),
-                    ],
-                    const Tab(icon: Icon(Icons.lightbulb_sharp)),
-                    const Tab(icon: Icon(Icons.perm_identity)),
-                    const Tab(icon: Icon(Icons.send)),
+                    if (accesoTotal) ...[
+                      const Tab(icon: Icon(Icons.numbers)),
+                      if (factoryMode) ...[
+                        const Tab(icon: Icon(Icons.settings)),
+                        const Tab(icon: Icon(Icons.tune)),
+                        const Tab(icon: Icon(Icons.catching_pokemon)),
+                      ],
+                      const Tab(icon: Icon(Icons.lightbulb_sharp)),
+                      if (factoryMode) ...[
+                        const Tab(icon: Icon(Icons.perm_identity)),
+                      ],
+                      const Tab(icon: Icon(Icons.send)),
+                    ] else if (accesoLabo) ...[
+                      const Tab(icon: Icon(Icons.numbers)),
+                      if (factoryMode) ...[
+                        const Tab(icon: Icon(Icons.settings)),
+                      ],
+                      const Tab(icon: Icon(Icons.lightbulb_sharp)),
+                      if (factoryMode) ...[
+                        const Tab(icon: Icon(Icons.perm_identity)),
+                      ],
+                      const Tab(icon: Icon(Icons.send)),
+                    ] else ...[
+                      const Tab(icon: Icon(Icons.lightbulb_sharp)),
+                      const Tab(icon: Icon(Icons.send)),
+                    ]
                   ],
                 ),
                 actions: <Widget>[
@@ -210,15 +235,32 @@ class DetectorTabsState extends State<DetectorTabs> {
                     })),
             body: TabBarView(
               children: [
-                const CharPage(),
-                if (factoryMode) ...[
-                  const CalibrationPage(),
-                  const RegulationPage(),
-                  const DebugPage(),
-                ],
-                const LightPage(),
-                const CredsTab(),
-                const OTAPage(),
+                if (accesoTotal) ...[
+                  const CharPage(),
+                  if (factoryMode) ...[
+                    const CalibrationPage(),
+                    const RegulationPage(),
+                    const DebugPage(),
+                  ],
+                  const LightPage(),
+                  if (factoryMode) ...[
+                    const CredsTab(),
+                  ],
+                  const OTAPage(),
+                ] else if (accesoLabo) ...[
+                  const CharPage(),
+                  if (factoryMode) ...[
+                    const CalibrationPage(),
+                  ],
+                  const LightPage(),
+                  if (factoryMode) ...[
+                    const CredsTab(),
+                  ],
+                  const OTAPage(),
+                ] else ...[
+                  const LightPage(),
+                  const OTAPage(),
+                ]
               ],
             ),
           ),
@@ -1443,7 +1485,13 @@ class CredsTabState extends State<CredsTab> {
               SizedBox(
                 width: 300,
                 child: sending
-                    ? const LinearProgressIndicator()
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset('assets/Vaca.webp'),
+                          const LinearProgressIndicator(),
+                        ],
+                      )
                     : ElevatedButton(
                         onPressed: () async {
                           printLog(amazonCA);
