@@ -2294,7 +2294,7 @@ class LoadState extends State<LoadingPage> {
           navigatorKey.currentState?.pushReplacementNamed('/io');
         } else if (deviceType == '024011') {
           navigatorKey.currentState?.pushReplacementNamed('/roller');
-        } else if (deviceType == '019000') {
+        } else if (deviceType == '019000' || deviceType == '027170') {
           navigatorKey.currentState?.pushReplacementNamed('/patito');
         }
       } else {
@@ -2351,6 +2351,16 @@ class LoadState extends State<LoadingPage> {
       } else if (deviceType == '020010') {
         ioValues = await myDevice.ioUuid.read();
         printLog('Valores IO: $ioValues || ${utf8.decode(ioValues)}');
+        varsValues = await myDevice.varsUuid.read();
+        printLog('Valores VARS: $varsValues || ${utf8.decode(varsValues)}');
+        var parts2 = utf8.decode(varsValues).split(':');
+        awsInit = parts2[0] == '1';
+        if (deviceName.contains('Domótica')) {
+          burneoDone = parts2[5] == '1';
+        } else {
+          burneoDone = false; 
+          //TODO: Cuando todos los módulos sean domótica, eliminar esto
+        }
       } else if (deviceType == '024011') {
         varsValues = await myDevice.varsUuid.read();
         var parts2 = utf8.decode(varsValues).split(':');
@@ -2383,39 +2393,40 @@ class LoadState extends State<LoadingPage> {
     return Scaffold(
       backgroundColor: const Color(0xff190019),
       body: Center(
-          child: Stack(
-        children: <Widget>[
-          const Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(
-                color: Color(0xfffbe4d8),
-              ),
-              SizedBox(height: 20),
-              Align(
-                  alignment: Alignment.center,
-                  child: Text(
-                    'Cargando...',
-                    style: TextStyle(color: Color(0xfffbe4d8)),
-                  )),
-            ],
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Text(
-                    'Versión $appVersionNumber',
-                    style:
-                        const TextStyle(color: Color(0xFFdfb6b2), fontSize: 12),
-                  )),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ],
-      )),
+        child: Stack(
+          children: <Widget>[
+            const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(
+                  color: Color(0xfffbe4d8),
+                ),
+                SizedBox(height: 20),
+                Align(
+                    alignment: Alignment.center,
+                    child: Text(
+                      'Cargando...',
+                      style: TextStyle(color: Color(0xfffbe4d8)),
+                    )),
+              ],
+            ),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Text(
+                      'Versión $appVersionNumber',
+                      style: const TextStyle(
+                          color: Color(0xFFdfb6b2), fontSize: 12),
+                    )),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

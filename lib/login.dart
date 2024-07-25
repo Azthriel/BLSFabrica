@@ -45,75 +45,63 @@ class LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       backgroundColor: const Color(0xff190019),
       body: Center(
-        child: Stack(
-          alignment: Alignment.center,
-          children: <Widget>[
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  height: 200,
-                  child: Image.asset('assets/Fabrica/logo.png'),
-                ),
-                const SizedBox(height: 50),
-                SizedBox(
-                    width: 300,
-                    child: TextField(
-                      style: const TextStyle(color: Color(0xfffbe4d8)),
-                      controller: legajoController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Ingrese su legajo',
-                        labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                        hintStyle: TextStyle(color: Color(0xfffbe4d8)),
-                      ),
-                      onSubmitted: (value) {
-                        passNode.requestFocus();
-                      },
-                    )),
-                const SizedBox(height: 20),
-                SizedBox(
-                    width: 300,
-                    child: TextField(
-                      style: const TextStyle(color: Color(0xfffbe4d8)),
-                      focusNode: passNode,
-                      controller: passController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Ingrese su contraseña',
-                        labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                        hintStyle: TextStyle(color: Color(0xfffbe4d8)),
-                      ),
-                      onSubmitted: (value) {
-                        verificarCredenciales();
-                      },
-                    )),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () => verificarCredenciales(),
-                  child: const Text('Ingresar'),
-                ),
-              ],
-            ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Text(
-                      'Versión $appVersionNumber',
-                      style: const TextStyle(
-                          color: Color(0xFFdfb6b2), fontSize: 12),
-                    )),
-                const SizedBox(height: 20),
-              ],
-            ),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                height: 200,
+                child: Image.asset('assets/Fabrica/logo.png'),
+              ),
+              const SizedBox(height: 0),
+              SizedBox(
+                  width: 300,
+                  child: TextField(
+                    style: const TextStyle(color: Color(0xfffbe4d8)),
+                    controller: legajoController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Ingrese su legajo',
+                      labelStyle: TextStyle(color: Color(0xfffbe4d8)),
+                      hintStyle: TextStyle(color: Color(0xfffbe4d8)),
+                    ),
+                    onSubmitted: (value) {
+                      passNode.requestFocus();
+                    },
+                  )),
+              const SizedBox(height: 20),
+              SizedBox(
+                  width: 300,
+                  child: TextField(
+                    style: const TextStyle(color: Color(0xfffbe4d8)),
+                    focusNode: passNode,
+                    controller: passController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Ingrese su contraseña',
+                      labelStyle: TextStyle(color: Color(0xfffbe4d8)),
+                      hintStyle: TextStyle(color: Color(0xfffbe4d8)),
+                    ),
+                    onSubmitted: (value) {
+                      verificarCredenciales();
+                    },
+                  )),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () => verificarCredenciales(),
+                child: const Text('Ingresar'),
+              ),
+              const SizedBox(height: 30,),
+            ],
+          ),
         ),
+      ),
+      bottomSheet: Text(
+        'Versión $appVersionNumber',
+        style: const TextStyle(color: Color(0xFFdfb6b2), fontSize: 12),
       ),
     );
   }

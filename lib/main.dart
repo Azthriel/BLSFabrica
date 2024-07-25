@@ -151,7 +151,7 @@ class PermissionHandlerState extends State<PermissionHandler> {
         }
         return const Center(
           child: CircularProgressIndicator(
-            color: Color.fromARGB(255, 189, 189, 189),
+            color: Color(0xFFBDBDBD),
           ),
         );
       },

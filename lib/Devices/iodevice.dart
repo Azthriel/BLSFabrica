@@ -648,6 +648,29 @@ class BurneoTabState extends State<BurneoTab> {
             scrollDirection: Axis.vertical,
             child: Column(
               children: [
+                Text.rich(
+                TextSpan(
+                  children: [
+                    const TextSpan(
+                      text: '¿Burneo realizado? ',
+                      style: TextStyle(
+                        color: Color(0xfffbe4d8),
+                        fontSize: 20,
+                      ),
+                    ),
+                    TextSpan(
+                      text: burneoDone ? 'SI' : 'NO',
+                      style: TextStyle(
+                        color: burneoDone
+                            ? const Color(0xff854f6c)
+                            : const Color(0xffFF0000),
+                        fontSize: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 30),
                 ElevatedButton(
                   onPressed: () {
                     registerActivity(
@@ -828,29 +851,29 @@ class CredsTabState extends State<CredsTab> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Text.rich(
-              //   TextSpan(
-              //     children: [
-              //       const TextSpan(
-              //         text: '¿Thing cargada? ',
-              //         style: TextStyle(
-              //           color: Color(0xfffbe4d8),
-              //           fontSize: 20,
-              //         ),
-              //       ),
-              //       TextSpan(
-              //         text: awsInit ? 'SI' : 'NO',
-              //         style: TextStyle(
-              //           color: awsInit
-              //               ? const Color(0xff854f6c)
-              //               : const Color(0xffFF0000),
-              //           fontSize: 20,
-              //         ),
-              //       ),
-              //     ],
-              //   ),
-              // ),
-              // const SizedBox(height: 30),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    const TextSpan(
+                      text: '¿Thing cargada? ',
+                      style: TextStyle(
+                        color: Color(0xfffbe4d8),
+                        fontSize: 20,
+                      ),
+                    ),
+                    TextSpan(
+                      text: awsInit ? 'SI' : 'NO',
+                      style: TextStyle(
+                        color: awsInit
+                            ? const Color(0xff854f6c)
+                            : const Color(0xffFF0000),
+                        fontSize: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 30),
               SizedBox(
                 width: 300,
                 child: TextField(

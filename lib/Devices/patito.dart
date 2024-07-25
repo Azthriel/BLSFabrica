@@ -359,16 +359,22 @@ class ListTabState extends State<ListTab> {
   void subToPatito() {
     myDevice.patitoUuid.setNotifyValue(true);
     final patitoSub = myDevice.patitoUuid.onValueReceived.listen((event) {
-      setState(() {
-        addData(aceleracionX, transformToDouble(event.sublist(0, 4)));
-        addData(aceleracionY, transformToDouble(event.sublist(4, 8)));
-        addData(aceleracionZ, transformToDouble(event.sublist(8, 12)));
-        addData(giroX, transformToDouble(event.sublist(12, 16)));
-        addData(giroY, transformToDouble(event.sublist(16, 20)));
-        addData(giroZ, transformToDouble(event.sublist(20)));
-        addDate(dates, DateTime.now());
-      });
-
+      if (context.mounted) {
+        setState(() {
+          addData(aceleracionX, transformToDouble(event.sublist(0, 4)),
+              windowSize: 5);
+          addData(aceleracionY, transformToDouble(event.sublist(4, 8)),
+              windowSize: 5);
+          addData(aceleracionZ, transformToDouble(event.sublist(8, 12)),
+              windowSize: 5);
+          addData(giroX, transformToDouble(event.sublist(12, 16)),
+              windowSize: 5);
+          addData(giroY, transformToDouble(event.sublist(16, 20)),
+              windowSize: 5);
+          addData(giroZ, transformToDouble(event.sublist(20)), windowSize: 5);
+          addDate(dates, DateTime.now());
+        });
+      }
       if (recording) {
         recordedData.add([
           DateTime.now(),
@@ -384,12 +390,15 @@ class ListTabState extends State<ListTab> {
     myDevice.device.cancelWhenDisconnected(patitoSub);
   }
 
-  void addData(List<double> list, double value) {
-    // printLog(value);
+  void addData(List<double> list, double value, {int windowSize = 5}) {
     if (list.length >= 1000) {
       list.removeAt(0);
     }
     list.add(value);
+    if (list.length > windowSize) {
+      list[list.length - 1] =
+          movingAverage(list, windowSize);
+    }
   }
 
   void addDate(List<DateTime> list, DateTime date) {
@@ -405,12 +414,13 @@ class ListTabState extends State<ListTab> {
       byteData.setInt8(i, data[i]);
     }
 
-    double value = byteData.getFloat32(0, Endian.little);
+    double value =
+        double.parse(byteData.getFloat32(0, Endian.little).toStringAsFixed(4));
 
     if (value < -15.0) {
       return -15.0;
     } else if (value > 15.0) {
-      return 15;
+      return 15.0;
     } else {
       return value;
     }
@@ -429,6 +439,16 @@ class ListTabState extends State<ListTab> {
     await file.writeAsString(csvData);
 
     await Share.shareFiles([file.path], text: 'CSV PATITO');
+  }
+
+  double movingAverage(List<double> data, int windowSize) {
+    int n = data.length;
+    if (n < windowSize) return data.last;
+    double sum = 0.0;
+    for (int i = n - windowSize; i < n; i++) {
+      sum += data[i];
+    }
+    return sum / windowSize;
   }
 
   @override
@@ -479,6 +499,7 @@ class ListTabState extends State<ListTab> {
 
   Widget createChart(String title, List<DateTime> dates, List<double> values) {
     double width = MediaQuery.of(context).size.width;
+
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
@@ -494,7 +515,6 @@ class ListTabState extends State<ListTab> {
             child: LineChart(
               LineChartData(
                 minY: -15.0,
-                baselineX: 60,
                 maxY: 15.0,
                 borderData: FlBorderData(
                     border: const Border(
@@ -519,37 +539,11 @@ class ListTabState extends State<ListTab> {
                       },
                     ),
                   ),
-                  rightTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: false,
-                      getTitlesWidget: (value, meta) {
-                        if (value == 0.0 || value == 50.0 || value == -50.0) {
-                          return Text(
-                            value.round().toString(),
-                            style: const TextStyle(
-                                color: Color(0xfffbe4d8), fontSize: 10),
-                          );
-                        } else {
-                          return const Text('');
-                        }
-                      },
-                    ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
                   ),
-                  topTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: false,
-                      getTitlesWidget: (value, meta) {
-                        if (value == 0.0 || value == 50.0 || value == -50.0) {
-                          return Text(
-                            value.round().toString(),
-                            style: const TextStyle(
-                                color: Color(0xfffbe4d8), fontSize: 10),
-                          );
-                        } else {
-                          return const Text('');
-                        }
-                      },
-                    ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
                   ),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
@@ -566,35 +560,23 @@ class ListTabState extends State<ListTab> {
                     ),
                   ),
                 ),
-                gridData: FlGridData(
+                gridData: const FlGridData(
                   show: false,
-                  horizontalInterval: 50,
-                  getDrawingHorizontalLine: (value) {
-                    return const FlLine(
-                      color: Color(0xff37434d),
-                      strokeWidth: 1,
-                    );
-                  },
-                  getDrawingVerticalLine: (value) {
-                    return const FlLine(
-                      color: Color(0xff37434d),
-                      strokeWidth: 1,
-                    );
-                  },
                 ),
                 lineBarsData: [
                   LineChartBarData(
+                      isCurved: true,
                       color: const Color(0xFF522B5B),
                       spots: values
                           .asMap()
                           .entries
                           .map((e) => FlSpot(e.key.toDouble(), e.value))
                           .toList(),
-                      isCurved: true,
-                      barWidth: 5,
+                      barWidth: 2,
                       belowBarData: BarAreaData(
-                        show: true,
-                      ),
+                          show: true, color: const Color(0xFFFFFFFF)),
+                      aboveBarData: BarAreaData(
+                          show: true, color: const Color(0xFFFFFFFF)),
                       dotData: const FlDotData(show: false)),
                 ],
               ),

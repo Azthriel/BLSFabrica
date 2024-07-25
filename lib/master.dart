@@ -93,6 +93,8 @@ bool accesoTotal = false;
 bool accesoLabo = false;
 bool accesoCS = false;
 
+bool burneoDone = false;
+
 // Si esta en modo profile.
 const bool xProfileMode = bool.fromEnvironment('dart.vm.profile');
 // Si esta en modo release.
@@ -102,7 +104,7 @@ const bool xDebugMode = !xProfileMode && !xReleaseMode;
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
-String appVersionNumber = '24071500';
+String appVersionNumber = '24071902';
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
@@ -122,8 +124,8 @@ void showToast(String message) {
       toastLength: Toast.LENGTH_SHORT,
       gravity: ToastGravity.BOTTOM,
       timeInSecForIosWeb: 1,
-      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-      textColor: const Color.fromARGB(255, 0, 0, 0),
+      backgroundColor: const Color(0xFFFFFFFF),
+      textColor: const Color(0xFF000000),
       fontSize: 16.0);
 }
 
@@ -154,10 +156,10 @@ String command(String device) {
     return '015773_IOT';
   } else if (device.contains('Radiador')) {
     return '041220_IOT';
-  } else if (device.contains('Módulo')) {
+  } else if (device.contains('Módulo') || device.contains('Domótica')) {
     return '020010_IOT';
   } else if (device.contains('Patito')) {
-    return '019000_IOT';
+    return '027170_IOT';
   } else {
     return '';
   }
@@ -629,7 +631,6 @@ Future<void> verificarAccesos(String legajo) async {
   }
 }
 
-
 // CLASES //
 
 //*BLUETOOTH*//
@@ -761,6 +762,8 @@ class MyDevice {
               c.uuid ==
               Guid(
                   'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
+          varsUuid = service.characteristics.firstWhere(
+              (c) => c.uuid == Guid('52a2f121-a8e3-468c-a5de-45dca9a2a207'));
 
           break;
         case '024011':
@@ -776,7 +779,7 @@ class MyDevice {
               Guid(
                   'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
           break;
-        case '019000':
+        case '019000' || '027170':
           BluetoothService service = services.firstWhere(
               (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
           patitoUuid = service.characteristics.firstWhere(
@@ -851,7 +854,7 @@ class QRScanPageState extends State<QRScanPage>
                 child: const Center(
                   child: Text('Escanea el QR',
                       style:
-                          TextStyle(color: Color.fromARGB(255, 178, 181, 174))),
+                          TextStyle(color: Color.fromRGBO(178, 181, 174, 1))),
                 )),
           ),
           // Abajo
@@ -898,7 +901,7 @@ class QRScanPageState extends State<QRScanPage>
                   right: 0,
                   child: Container(
                     height: 4,
-                    color: const Color.fromARGB(255, 30, 36, 43),
+                    color: const Color(0xFF1E242B),
                   ),
                 ),
                 Positioned(
@@ -907,7 +910,7 @@ class QRScanPageState extends State<QRScanPage>
                   right: 0,
                   child: Container(
                     height: 3,
-                    color: const Color.fromARGB(255, 178, 181, 174),
+                    color: const Color(0xFFB2B5AE),
                   ),
                 ),
                 Positioned(
@@ -916,7 +919,7 @@ class QRScanPageState extends State<QRScanPage>
                   right: 0,
                   child: Container(
                     height: 3,
-                    color: const Color.fromARGB(255, 178, 181, 174),
+                    color: const Color(0xFFB2B5AE),
                   ),
                 ),
                 Positioned(
@@ -925,7 +928,7 @@ class QRScanPageState extends State<QRScanPage>
                   left: 0,
                   child: Container(
                     width: 3,
-                    color: const Color.fromARGB(255, 178, 181, 174),
+                    color: const Color(0xFFB2B5AE),
                   ),
                 ),
                 Positioned(
@@ -934,7 +937,7 @@ class QRScanPageState extends State<QRScanPage>
                   right: 0,
                   child: Container(
                     width: 3,
-                    color: const Color.fromARGB(255, 178, 181, 174),
+                    color: const Color(0xFFB2B5AE),
                   ),
                 ),
               ],
