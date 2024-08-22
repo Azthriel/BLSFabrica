@@ -1966,10 +1966,10 @@ class RegbankTabState extends State<RegbankTab> {
                 ),
                 ElevatedButton(
                   style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all<Color>(
-                        const Color(0xFF522B5B)),
-                    foregroundColor: MaterialStateProperty.all<Color>(
-                        const Color(0xFFdfb6b2)),
+                    backgroundColor:
+                        WidgetStateProperty.all<Color>(const Color(0xFF522B5B)),
+                    foregroundColor:
+                        WidgetStateProperty.all<Color>(const Color(0xFFdfb6b2)),
                   ),
                   onPressed: () {
                     sendMessagemqtt5773('015773_RB', 'DIAGNOSIS_OK');
@@ -2355,12 +2355,7 @@ class LoadState extends State<LoadingPage> {
         printLog('Valores VARS: $varsValues || ${utf8.decode(varsValues)}');
         var parts2 = utf8.decode(varsValues).split(':');
         awsInit = parts2[0] == '1';
-        if (deviceName.contains('Domótica')) {
-          burneoDone = parts2[5] == '1';
-        } else {
-          burneoDone = false; 
-          //TODO: Cuando todos los módulos sean domótica, eliminar esto
-        }
+        burneoDone = parts2[5] == '1';
       } else if (deviceType == '024011') {
         varsValues = await myDevice.varsUuid.read();
         var parts2 = utf8.decode(varsValues).split(':');

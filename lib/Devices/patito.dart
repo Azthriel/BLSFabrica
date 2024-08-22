@@ -109,7 +109,7 @@ class PatitoTabTabState extends State<PatitoTab> {
         length: accesoTotal || accesoLabo ? 4 : 2,
         child: PopScope(
           canPop: false,
-          onPopInvoked: (didPop) {
+          onPopInvokedWithResult: (didPop, a) {
             showDialog(
               context: context,
               barrierDismissible: false,
@@ -259,7 +259,7 @@ class ToolsPageState extends State<ToolsPage> {
                   sendDataToDevice();
                 },
                 style: ButtonStyle(
-                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                     RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18.0),
                     ),
@@ -268,6 +268,23 @@ class ToolsPageState extends State<ToolsPage> {
                 child: const Text('Enviar'),
               ),
               const SizedBox(height: 20),
+              const Text.rich(
+                TextSpan(
+                    text: 'Código de producto:',
+                    style: (TextStyle(
+                        fontSize: 20.0,
+                        color: Color(0xfffbe4d8),
+                        fontWeight: FontWeight.bold))),
+              ),
+              Text.rich(
+                TextSpan(
+                    text: productCode,
+                    style: (const TextStyle(
+                        fontSize: 20.0,
+                        color: Color(0xFFdfb6b2),
+                        fontWeight: FontWeight.bold))),
+              ),
+              const SizedBox(height: 15),
               const Text.rich(
                 TextSpan(
                     text: 'Version de software del modulo IOT:',
@@ -311,7 +328,7 @@ class ToolsPageState extends State<ToolsPage> {
                       .write('${command(deviceName)}[0](1)'.codeUnits);
                 },
                 style: ButtonStyle(
-                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                     RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18.0),
                     ),
@@ -345,6 +362,10 @@ class ListTabState extends State<ListTab> {
   List<double> giroX = List<double>.filled(1000, 0.0, growable: true);
   List<double> giroY = List<double>.filled(1000, 0.0, growable: true);
   List<double> giroZ = List<double>.filled(1000, 0.0, growable: true);
+  List<double> sumaAcc = List<double>.filled(1000, 0.0, growable: true);
+  List<double> sumaGiro = List<double>.filled(1000, 0.0, growable: true);
+  List<double> promAcc = List<double>.filled(1000, 0.0, growable: true);
+  List<double> promGiro = List<double>.filled(1000, 0.0, growable: true);
   List<DateTime> dates =
       List<DateTime>.filled(1000, DateTime.now(), growable: true);
   bool recording = false;
@@ -373,6 +394,13 @@ class ListTabState extends State<ListTab> {
               windowSize: 5);
           addData(giroZ, transformToDouble(event.sublist(20)), windowSize: 5);
           addDate(dates, DateTime.now());
+
+          addData(sumaAcc,
+              (aceleracionX.last + aceleracionY.last + aceleracionZ.last));
+          addData(promAcc,
+              (aceleracionX.last + aceleracionY.last + aceleracionZ.last) / 3);
+          addData(sumaGiro, (giroX.last + giroY.last + giroZ.last));
+          addData(promGiro, (giroX.last + giroY.last + giroZ.last) / 3);
         });
       }
       if (recording) {
@@ -383,7 +411,21 @@ class ListTabState extends State<ListTab> {
           transformToDouble(event.sublist(8, 12)),
           transformToDouble(event.sublist(12, 16)),
           transformToDouble(event.sublist(16, 20)),
-          transformToDouble(event.sublist(20))
+          transformToDouble(event.sublist(20)),
+          (transformToDouble(event.sublist(0, 4)) +
+              transformToDouble(event.sublist(4, 8)) +
+              transformToDouble(event.sublist(8, 12))),
+          ((transformToDouble(event.sublist(0, 4)) +
+                  transformToDouble(event.sublist(4, 8)) +
+                  transformToDouble(event.sublist(8, 12))) /
+              3),
+          (transformToDouble(event.sublist(12, 16)) +
+              transformToDouble(event.sublist(16, 20)) +
+              transformToDouble(event.sublist(20))),
+          ((transformToDouble(event.sublist(12, 16)) +
+                  transformToDouble(event.sublist(16, 20)) +
+                  transformToDouble(event.sublist(20))) /
+              3)
         ]);
       }
     });
@@ -396,8 +438,7 @@ class ListTabState extends State<ListTab> {
     }
     list.add(value);
     if (list.length > windowSize) {
-      list[list.length - 1] =
-          movingAverage(list, windowSize);
+      list[list.length - 1] = movingAverage(list, windowSize);
     }
   }
 
@@ -428,7 +469,7 @@ class ListTabState extends State<ListTab> {
 
   void saveDataToCsv() async {
     List<List<dynamic>> rows = [
-      ["Timestamp", "AccX", "AccY", "AccZ", "GiroX", "GiroY", "GiroZ"]
+      ["Timestamp", "AccX", "AccY", "AccZ", "GiroX", "GiroY", "GiroZ", "SumaAcc", "PromAcc", "SumaGiro", "PromGiro"]
     ];
     rows.addAll(recordedData);
 
@@ -491,6 +532,10 @@ class ListTabState extends State<ListTab> {
             createChart('Giro Y', dates, giroY),
             createChart('Aceleración Z', dates, aceleracionZ),
             createChart('Giro Z', dates, giroZ),
+            createChart('Suma Aceleración', dates, sumaAcc),
+            createChart('Promedio Aceleración', dates, promAcc),
+            createChart('Suma Giro', dates, sumaGiro),
+            createChart('Promedio Giro', dates, promGiro),
           ],
         ),
       ),
@@ -1049,8 +1094,7 @@ class OtaTabState extends State<OtaTab> {
                         sendOTAWifi(false);
                       },
                       style: ButtonStyle(
-                        shape:
-                            MaterialStateProperty.all<RoundedRectangleBorder>(
+                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18.0),
                           ),
@@ -1090,8 +1134,7 @@ class OtaTabState extends State<OtaTab> {
                         sendOTAWifi(true);
                       },
                       style: ButtonStyle(
-                        shape:
-                            MaterialStateProperty.all<RoundedRectangleBorder>(
+                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18.0),
                           ),
@@ -1138,8 +1181,7 @@ class OtaTabState extends State<OtaTab> {
                         sendOTABLE(false);
                       },
                       style: ButtonStyle(
-                        shape:
-                            MaterialStateProperty.all<RoundedRectangleBorder>(
+                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18.0),
                           ),
@@ -1180,8 +1222,7 @@ class OtaTabState extends State<OtaTab> {
                         sendOTABLE(true);
                       },
                       style: ButtonStyle(
-                        shape:
-                            MaterialStateProperty.all<RoundedRectangleBorder>(
+                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18.0),
                           ),

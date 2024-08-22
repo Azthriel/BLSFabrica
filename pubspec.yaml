@@ -17,8 +17,8 @@ dependencies:
   firebase_core: ^2.24.0
   cloud_firestore: ^4.13.3
   permission_handler: ^11.1.0
-  flutter_blue_plus: ^1.30.3
-  easy_refresh: ^3.3.2+4
+  flutter_blue_plus: ^1.32.11
+  easy_refresh: ^3.4.0
   qr_code_scanner: ^1.0.1
   mqtt_client: ^10.0.2
   intl: ^0.19.0

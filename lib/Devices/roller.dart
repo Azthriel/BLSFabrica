@@ -110,7 +110,7 @@ class RollerTabState extends State<RollerTab> {
               : 2,
           child: PopScope(
             canPop: false,
-            onPopInvoked: (didPop) {
+            onPopInvokedWithResult: (didPop, a)  {
               showDialog(
                 context: context,
                 barrierDismissible: false,
@@ -262,7 +262,7 @@ class ToolsPageState extends State<ToolsPage> {
                   sendDataToDevice();
                 },
                 style: ButtonStyle(
-                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                     RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18.0),
                     ),
@@ -271,6 +271,23 @@ class ToolsPageState extends State<ToolsPage> {
                 child: const Text('Enviar'),
               ),
               const SizedBox(height: 20),
+              const Text.rich(
+                TextSpan(
+                    text: 'Código de producto:',
+                    style: (TextStyle(
+                        fontSize: 20.0,
+                        color: Color(0xfffbe4d8),
+                        fontWeight: FontWeight.bold))),
+              ),
+              Text.rich(
+                TextSpan(
+                    text: productCode,
+                    style: (const TextStyle(
+                        fontSize: 20.0,
+                        color: Color(0xFFdfb6b2),
+                        fontWeight: FontWeight.bold))),
+              ),
+              const SizedBox(height: 15),
               const Text.rich(
                 TextSpan(
                     text: 'Version de software del modulo IOT:',
@@ -313,7 +330,7 @@ class ToolsPageState extends State<ToolsPage> {
                       .write('${command(deviceName)}[0](1)'.codeUnits);
                 },
                 style: ButtonStyle(
-                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                     RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18.0),
                     ),
@@ -385,7 +402,7 @@ class ToolsPageState extends State<ToolsPage> {
                   );
                 },
                 style: ButtonStyle(
-                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                     RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18.0),
                     ),
@@ -1629,8 +1646,7 @@ class OtaTabState extends State<OtaTab> {
                         sendOTAWifi(false);
                       },
                       style: ButtonStyle(
-                        shape:
-                            MaterialStateProperty.all<RoundedRectangleBorder>(
+                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18.0),
                           ),
@@ -1670,8 +1686,7 @@ class OtaTabState extends State<OtaTab> {
                         sendOTAWifi(true);
                       },
                       style: ButtonStyle(
-                        shape:
-                            MaterialStateProperty.all<RoundedRectangleBorder>(
+                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18.0),
                           ),
@@ -1718,8 +1733,7 @@ class OtaTabState extends State<OtaTab> {
                         sendOTABLE(false);
                       },
                       style: ButtonStyle(
-                        shape:
-                            MaterialStateProperty.all<RoundedRectangleBorder>(
+                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18.0),
                           ),
@@ -1760,8 +1774,7 @@ class OtaTabState extends State<OtaTab> {
                         sendOTABLE(true);
                       },
                       style: ButtonStyle(
-                        shape:
-                            MaterialStateProperty.all<RoundedRectangleBorder>(
+                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18.0),
                           ),

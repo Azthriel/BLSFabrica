@@ -112,7 +112,7 @@ class IODevicesTabState extends State<IODevicesTab> {
           length: accesoTotal || accesoLabo ? 5 : 2,
           child: PopScope(
             canPop: false,
-            onPopInvoked: (didPop) {
+            onPopInvokedWithResult: (didPop, a)  {
               showDialog(
                 context: context,
                 barrierDismissible: false,
@@ -270,7 +270,7 @@ class InfoTabState extends State<InfoTab> {
                   sendDataToDevice();
                 },
                 style: ButtonStyle(
-                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                     RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18.0),
                     ),
@@ -279,6 +279,23 @@ class InfoTabState extends State<InfoTab> {
                 child: const Text('Enviar'),
               ),
               const SizedBox(height: 50),
+              const Text.rich(
+                TextSpan(
+                    text: 'Código de producto:',
+                    style: (TextStyle(
+                        fontSize: 20.0,
+                        color: Color(0xfffbe4d8),
+                        fontWeight: FontWeight.bold))),
+              ),
+              Text.rich(
+                TextSpan(
+                    text: productCode,
+                    style: (const TextStyle(
+                        fontSize: 20.0,
+                        color: Color(0xFFdfb6b2),
+                        fontWeight: FontWeight.bold))),
+              ),
+              const SizedBox(height: 15),
               const Text.rich(
                 TextSpan(
                     text: 'Version de software del modulo IOT:',
@@ -322,7 +339,7 @@ class InfoTabState extends State<InfoTab> {
                       .write('${command(deviceName)}[0](1)'.codeUnits);
                 },
                 style: ButtonStyle(
-                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                     RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18.0),
                     ),
@@ -649,28 +666,28 @@ class BurneoTabState extends State<BurneoTab> {
             child: Column(
               children: [
                 Text.rich(
-                TextSpan(
-                  children: [
-                    const TextSpan(
-                      text: '¿Burneo realizado? ',
-                      style: TextStyle(
-                        color: Color(0xfffbe4d8),
-                        fontSize: 20,
+                  TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: '¿Burneo realizado? ',
+                        style: TextStyle(
+                          color: Color(0xfffbe4d8),
+                          fontSize: 20,
+                        ),
                       ),
-                    ),
-                    TextSpan(
-                      text: burneoDone ? 'SI' : 'NO',
-                      style: TextStyle(
-                        color: burneoDone
-                            ? const Color(0xff854f6c)
-                            : const Color(0xffFF0000),
-                        fontSize: 20,
+                      TextSpan(
+                        text: burneoDone ? 'SI' : 'NO',
+                        style: TextStyle(
+                          color: burneoDone
+                              ? const Color(0xff854f6c)
+                              : const Color(0xffFF0000),
+                          fontSize: 20,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 30),
+                const SizedBox(height: 30),
                 ElevatedButton(
                   onPressed: () {
                     registerActivity(
@@ -707,10 +724,10 @@ class BurneoTabState extends State<BurneoTab> {
                           inactiveThumbColor: const Color(0xff854f6c),
                           inactiveTrackColor: const Color(0xfffbe4d8),
                           trackOutlineColor:
-                              const MaterialStatePropertyAll(Color(0xff854f6c)),
-                          thumbIcon: MaterialStateProperty.resolveWith<Icon?>(
-                            (Set<MaterialState> states) {
-                              if (states.contains(MaterialState.selected)) {
+                              const WidgetStatePropertyAll(Color(0xff854f6c)),
+                          thumbIcon: WidgetStateProperty.resolveWith<Icon?>(
+                            (Set<WidgetState> states) {
+                              if (states.contains(WidgetState.selected)) {
                                 return const Icon(Icons.check,
                                     color: Color(0xff854f6c));
                               } else {
@@ -776,9 +793,10 @@ class BurneoTabState extends State<BurneoTab> {
                           inactiveThumbColor: const Color(0xff854f6c),
                           inactiveTrackColor: const Color(0xfffbe4d8),
                           trackOutlineColor:
-                              const MaterialStatePropertyAll(Color(0xff854f6c)),
-                          thumbIcon: MaterialStateProperty.resolveWith<Icon?>(
-                            (Set<MaterialState> states) {
+                              const WidgetStatePropertyAll(Color(0xff854f6c)),
+                          thumbIcon: WidgetStateProperty.resolveWith<Icon?>(
+                            (Set<WidgetState> states) {
+                              // ignore: deprecated_member_use
                               if (states.contains(MaterialState.selected)) {
                                 return const Icon(Icons.check,
                                     color: Color(0xff854f6c));
@@ -1268,7 +1286,7 @@ class OtaTabState extends State<OtaTab> {
                   sendOTAWifi();
                 },
                 style: ButtonStyle(
-                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                     RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18.0),
                     ),
@@ -1306,7 +1324,7 @@ class OtaTabState extends State<OtaTab> {
                   sendOTABLE();
                 },
                 style: ButtonStyle(
-                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                     RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18.0),
                     ),

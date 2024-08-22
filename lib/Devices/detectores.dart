@@ -90,7 +90,7 @@ class DetectorTabsState extends State<DetectorTabs> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, a) {
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -350,7 +350,7 @@ class CharState extends State<CharPage> {
                   sendDataToDevice();
                 },
                 style: ButtonStyle(
-                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                     RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18.0),
                     ),
@@ -360,6 +360,23 @@ class CharState extends State<CharPage> {
               ),
             ],
             const SizedBox(height: 50),
+            const Text.rich(
+              TextSpan(
+                  text: 'Código de producto:',
+                  style: (TextStyle(
+                      fontSize: 20.0,
+                      color: Color(0xfffbe4d8),
+                      fontWeight: FontWeight.bold))),
+            ),
+            Text.rich(
+              TextSpan(
+                  text: productCode,
+                  style: (const TextStyle(
+                      fontSize: 20.0,
+                      color: Color(0xFFdfb6b2),
+                      fontWeight: FontWeight.bold))),
+            ),
+            const SizedBox(height: 15),
             const Text.rich(
               TextSpan(
                   text: 'Version de software del modulo IOT:',
@@ -434,7 +451,7 @@ class CharState extends State<CharPage> {
     return ElevatedButton(
       onPressed: onPressed,
       style: ButtonStyle(
-        shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
           RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18.0),
           ),
@@ -1923,8 +1940,7 @@ class OTAState extends State<OTAPage> {
                         sendOTAWifi(1);
                       },
                       style: ButtonStyle(
-                        shape:
-                            MaterialStateProperty.all<RoundedRectangleBorder>(
+                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18.0),
                           ),
@@ -1964,8 +1980,7 @@ class OTAState extends State<OTAPage> {
                         sendOTAWifi(0);
                       },
                       style: ButtonStyle(
-                        shape:
-                            MaterialStateProperty.all<RoundedRectangleBorder>(
+                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18.0),
                           ),
@@ -2012,8 +2027,7 @@ class OTAState extends State<OTAPage> {
                         sendOTABLE(1);
                       },
                       style: ButtonStyle(
-                        shape:
-                            MaterialStateProperty.all<RoundedRectangleBorder>(
+                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18.0),
                           ),
@@ -2054,8 +2068,7 @@ class OTAState extends State<OTAPage> {
                         sendOTABLE(0);
                       },
                       style: ButtonStyle(
-                        shape:
-                            MaterialStateProperty.all<RoundedRectangleBorder>(
+                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18.0),
                           ),
@@ -2100,7 +2113,7 @@ class OTAState extends State<OTAPage> {
                   sendOTAWifi(2);
                 },
                 style: ButtonStyle(
-                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                     RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18.0),
                     ),
@@ -2157,6 +2170,7 @@ class DebugState extends State<DebugPage> {
   void updateDebugValues(List<int> values) {
     debug.clear();
     printLog('Aqui esta esto: $values');
+    printLog('Largo del valor: ${values.length}');
 
     setState(() {
       for (int i = 0; i < values.length; i += 2) {
@@ -2165,6 +2179,22 @@ class DebugState extends State<DebugPage> {
       }
     });
   }
+
+// void updateDebugValues(List<int> values) {
+//   debug.clear();
+//   printLog('Aqui esta esto: $values');
+
+//   setState(() {
+//     for (int i = 0; i < values.length - 1; i += 2) {
+//       int datas = values[i] + (values[i + 1] << 8);
+//       debug.add(datas.toString());
+//     }
+
+//     // Procesar el último valor (4 bits)
+//     int lastValue = values.last & 0x0F;
+//     debug.add(lastValue.toString());
+//   });
+// }
 
   void _subscribeDebug() async {
     if (!alreadySubDebug) {

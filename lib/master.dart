@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -32,6 +31,7 @@ List<int> ioValues = [];
 String myDeviceid = '';
 String deviceName = '';
 String serialNumber = '';
+String productCode = '';
 bool bluetoothOn = true;
 String wifiName = '';
 String wifiPassword = '';
@@ -394,7 +394,7 @@ void showBleText() async {
           actions: [
             TextButton(
               style: const ButtonStyle(
-                  foregroundColor: MaterialStatePropertyAll(Color(0xFFdfb6b2))),
+                  foregroundColor: WidgetStatePropertyAll(Color(0xFFdfb6b2))),
               onPressed: () async {
                 if (Platform.isAndroid) {
                   await FlutterBluePlus.turnOn();
@@ -681,6 +681,7 @@ class MyDevice {
       var partes = str.split(':');
       var fun = partes[0].split('_');
       factoryMode = partes[2].contains('_F');
+      productCode = partes[0];
       deviceType = fun[0];
       serialNumber = partes[1];
       softwareVersion = partes[2];
