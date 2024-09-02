@@ -15,7 +15,7 @@ import 'package:intl/intl.dart';
 // import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:share/share.dart';
+import 'package:share_plus/share_plus.dart';
 
 class MenuPage extends StatefulWidget {
   const MenuPage({super.key});
@@ -1389,7 +1389,7 @@ class RegbankTabState extends State<RegbankTab> {
   }
 
   void shareFile(String filePath) {
-    Share.shareFiles([filePath]);
+    Share.shareXFiles([XFile(filePath)]);
   }
 
   Future<void> exportDataToGoogleSheet(
@@ -2332,6 +2332,9 @@ class LoadState extends State<LoadingPage> {
           awsInit = parts2[7] == '1';
           tempMap = parts2[8] == '1';
         }
+
+        roomTempSended = await tempWasSended(command(deviceName), extractSerialNumber(deviceName));
+
         printLog('Estado: $turnOn');
       } else if (deviceType == '015773') {
         //Si soy un detector

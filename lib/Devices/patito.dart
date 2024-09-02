@@ -8,7 +8,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:biocaldensmartlifefabrica/master.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:share/share.dart';
+import 'package:share_plus/share_plus.dart';
 
 class PatitoTab extends StatefulWidget {
   const PatitoTab({super.key});
@@ -469,7 +469,19 @@ class ListTabState extends State<ListTab> {
 
   void saveDataToCsv() async {
     List<List<dynamic>> rows = [
-      ["Timestamp", "AccX", "AccY", "AccZ", "GiroX", "GiroY", "GiroZ", "SumaAcc", "PromAcc", "SumaGiro", "PromGiro"]
+      [
+        "Timestamp",
+        "AccX",
+        "AccY",
+        "AccZ",
+        "GiroX",
+        "GiroY",
+        "GiroZ",
+        "SumaAcc",
+        "PromAcc",
+        "SumaGiro",
+        "PromGiro"
+      ]
     ];
     rows.addAll(recordedData);
 
@@ -479,7 +491,7 @@ class ListTabState extends State<ListTab> {
     File file = File(pathOfTheFileToWrite);
     await file.writeAsString(csvData);
 
-    await Share.shareFiles([file.path], text: 'CSV PATITO');
+    await Share.shareXFiles([XFile(file.path)], text: 'CSV PATITO');
   }
 
   double movingAverage(List<double> data, int windowSize) {

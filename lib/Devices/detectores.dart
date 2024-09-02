@@ -2158,6 +2158,8 @@ class DebugPage extends StatefulWidget {
 
 class DebugState extends State<DebugPage> {
   List<String> debug = [];
+  List<int> lastValue = [];
+  int regIniIns = 0;
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -2169,32 +2171,34 @@ class DebugState extends State<DebugPage> {
 
   void updateDebugValues(List<int> values) {
     debug.clear();
+    lastValue.clear();
     printLog('Aqui esta esto: $values');
     printLog('Largo del valor: ${values.length}');
 
     setState(() {
-      for (int i = 0; i < values.length; i += 2) {
+      // Procesar valores de 16 bits y añadirlos a la lista debug
+      for (int i = 0; i < values.length - 5; i += 2) {
         int datas = values[i] + (values[i + 1] << 8);
         debug.add(datas.toString());
       }
+
+      // Actualizar lastValue para que contenga solo los últimos 4 elementos
+      lastValue = values.sublist(values.length - 4);
+
+      printLog('Largo del último valor: ${lastValue.length}');
+
+      // Verificar que la lista tiene exactamente 4 elementos
+      if (lastValue.length == 4) {
+        regIniIns = (lastValue[3] << 24) |
+            (lastValue[2] << 16) |
+            (lastValue[1] << 8) |
+            lastValue[0];
+        printLog('Valor mistico: $regIniIns');
+      } else {
+        printLog('No hay suficientes valores para procesar regIniIns.');
+      }
     });
   }
-
-// void updateDebugValues(List<int> values) {
-//   debug.clear();
-//   printLog('Aqui esta esto: $values');
-
-//   setState(() {
-//     for (int i = 0; i < values.length - 1; i += 2) {
-//       int datas = values[i] + (values[i + 1] << 8);
-//       debug.add(datas.toString());
-//     }
-
-//     // Procesar el último valor (4 bits)
-//     int lastValue = values.last & 0x0F;
-//     debug.add(lastValue.toString());
-//   });
-// }
 
   void _subscribeDebug() async {
     if (!alreadySubDebug) {
@@ -2258,42 +2262,81 @@ class DebugState extends State<DebugPage> {
             Expanded(
               child: ListView.builder(
                 controller: _scrollController,
-                itemCount: debug.length,
+                itemCount: debug.length + 1,
                 itemBuilder: (context, index) {
-                  return ListBody(
-                    children: [
-                      Row(
-                        children: [
-                          Text(_textToShow(index),
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                  color: Color(0xfffbe4d8),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20)),
-                          Text(debug[index],
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                  color: Color(0xFFdfb6b2),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20)),
-                        ],
-                      ),
-                      SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                            disabledActiveTrackColor: const Color(0xff2b124c),
-                            disabledInactiveTrackColor: const Color(0xff854f6c),
-                            trackHeight: 12,
-                            thumbShape: SliderComponentShape.noThumb),
-                        child: Slider(
-                          value: double.parse(debug[index]),
-                          min: 0,
-                          max: 1024,
-                          onChanged: null,
-                          onChangeStart: null,
-                        ),
-                      ),
-                    ],
-                  );
+                  return index == 0
+                      ? ListBody(
+                          children: [
+                            Row(
+                              children: [
+                                const Text('RegIniIns: ',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        color: Color(0xfffbe4d8),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 20)),
+                                Text(regIniIns.toString(),
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                        color: Color(0xFFdfb6b2),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 20)),
+                              ],
+                            ),
+                            SliderTheme(
+                              data: SliderTheme.of(context).copyWith(
+                                  disabledActiveTrackColor:
+                                      const Color(0xff2b124c),
+                                  disabledInactiveTrackColor:
+                                      const Color(0xff854f6c),
+                                  trackHeight: 12,
+                                  thumbShape: SliderComponentShape.noThumb),
+                              child: Slider(
+                                value: regIniIns.toDouble(),
+                                min: 0,
+                                max: pow(2, 32).toDouble(),
+                                onChanged: null,
+                                onChangeStart: null,
+                              ),
+                            ),
+                          ],
+                        )
+                      : ListBody(
+                          children: [
+                            Row(
+                              children: [
+                                Text(_textToShow(index - 1),
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                        color: Color(0xfffbe4d8),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 20)),
+                                Text(debug[index - 1],
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                        color: Color(0xFFdfb6b2),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 20)),
+                              ],
+                            ),
+                            SliderTheme(
+                              data: SliderTheme.of(context).copyWith(
+                                  disabledActiveTrackColor:
+                                      const Color(0xff2b124c),
+                                  disabledInactiveTrackColor:
+                                      const Color(0xff854f6c),
+                                  trackHeight: 12,
+                                  thumbShape: SliderComponentShape.noThumb),
+                              child: Slider(
+                                value: double.parse(debug[index - 1]),
+                                min: 0,
+                                max: 1024,
+                                onChanged: null,
+                                onChangeStart: null,
+                              ),
+                            ),
+                          ],
+                        );
                 },
               ),
             ),

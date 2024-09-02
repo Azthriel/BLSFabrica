@@ -863,24 +863,38 @@ class TempTabState extends State<TempTab> {
             ),
             const SizedBox(height: 30),
             SizedBox(
-              width: 300,
-              child: TextField(
-                style: const TextStyle(color: Color(0xfffbe4d8)),
-                keyboardType: TextInputType.number,
-                controller: roomTempController,
-                decoration: const InputDecoration(
-                  labelText: 'Introducir temperatura de la habitación',
-                  labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                ),
-                onSubmitted: (value) {
-                  registerActivity(
-                      command(deviceName),
-                      extractSerialNumber(deviceName),
-                      'Se envío de temperatura ambiente: $value°C');
-                  sendRoomTemperature(value);
-                },
-              ),
-            ),
+                width: 300,
+                child: !roomTempSended
+                    ? TextField(
+                        style: const TextStyle(color: Color(0xfffbe4d8)),
+                        keyboardType: TextInputType.number,
+                        controller: roomTempController,
+                        decoration: const InputDecoration(
+                          labelText: 'Introducir temperatura de la habitación',
+                          labelStyle: TextStyle(color: Color(0xfffbe4d8)),
+                        ),
+                        onSubmitted: (value) {
+                          registerActivity(
+                              command(deviceName),
+                              extractSerialNumber(deviceName),
+                              'Se cambio la temperatura ambiente de $actualTemp°C a $value°C');
+                          sendRoomTemperature(value);
+                          registerTemp(command(deviceName),
+                              extractSerialNumber(deviceName));
+                          showToast('Temperatura ambiente seteada');
+                          setState(() {
+                            roomTempSended = true;
+                          });
+                        },
+                      )
+                    : Text(
+                        'La temperatura ambiente ya fue seteada\npor este legajo el dia \n$tempDate',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Color(0xfffbe4d8),
+                          fontSize: 20,
+                        ),
+                      )),
             const SizedBox(height: 30),
             Text.rich(
               TextSpan(
@@ -1713,8 +1727,7 @@ class OtaTabState extends State<OtaTab> {
                         sendOTAWifi(false);
                       },
                       style: ButtonStyle(
-                        shape:
-                            WidgetStateProperty.all<RoundedRectangleBorder>(
+                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18.0),
                           ),
@@ -1754,8 +1767,7 @@ class OtaTabState extends State<OtaTab> {
                         sendOTAWifi(true);
                       },
                       style: ButtonStyle(
-                        shape:
-                            WidgetStateProperty.all<RoundedRectangleBorder>(
+                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18.0),
                           ),
@@ -1802,8 +1814,7 @@ class OtaTabState extends State<OtaTab> {
                         sendOTABLE(false);
                       },
                       style: ButtonStyle(
-                        shape:
-                            WidgetStateProperty.all<RoundedRectangleBorder>(
+                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18.0),
                           ),
@@ -1844,8 +1855,7 @@ class OtaTabState extends State<OtaTab> {
                         sendOTABLE(true);
                       },
                       style: ButtonStyle(
-                        shape:
-                            WidgetStateProperty.all<RoundedRectangleBorder>(
+                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18.0),
                           ),

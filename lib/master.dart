@@ -11,7 +11,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
-import 'package:share/share.dart';
+import 'package:share_plus/share_plus.dart';
 
 // VARIABLES //
 
@@ -95,6 +95,9 @@ bool accesoCS = false;
 
 bool burneoDone = false;
 
+bool roomTempSended = false;
+String tempDate = '';
+
 // Si esta en modo profile.
 const bool xProfileMode = bool.fromEnvironment('dart.vm.profile');
 // Si esta en modo release.
@@ -104,7 +107,7 @@ const bool xDebugMode = !xProfileMode && !xReleaseMode;
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
-String appVersionNumber = '24071902';
+String appVersionNumber = '24090200';
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
@@ -179,7 +182,7 @@ Stacktrace: ${details.stack}
 void sendReportOnWhatsApp(String filePath) async {
   const text = 'Attached is the error report';
   final file = File(filePath);
-  await Share.shareFiles([file.path], text: text);
+  await Share.shareXFiles([XFile(file.path)], text: text);
 }
 
 Future<void> openQRScanner(BuildContext context) async {
@@ -628,6 +631,50 @@ Future<void> verificarAccesos(String legajo) async {
     }
   } catch (e) {
     printLog('Error verificando accesos $e');
+  }
+}
+
+Future<bool> tempWasSended(String productCode, String serialNumber) async {
+  printLog('Ta bacano');
+  try {
+    String docPath = '$legajoConectado:$productCode:$serialNumber';
+    DocumentSnapshot documentSnapshot =
+        await FirebaseFirestore.instance.collection('Data').doc(docPath).get();
+    if (documentSnapshot.exists) {
+      Map<String, dynamic> data =
+          documentSnapshot.data() as Map<String, dynamic>;
+
+      printLog('TempSend: ${data['temp']}');
+      data['temp'] == true
+          ? tempDate = data['tempDate']
+          : tempDate =
+              '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}';
+      return data['temp'] ?? false;
+    } else {
+      printLog('No existe');
+      return false;
+    }
+  } catch (error) {
+    printLog('Error al realizar la consulta: $error');
+    return false;
+  }
+}
+
+void registerTemp(String productCode, String serialNumber) async {
+  try {
+    FirebaseFirestore db = FirebaseFirestore.instance;
+
+    String date =
+        '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}';
+
+    String documentPath = '$legajoConectado:$productCode:$serialNumber';
+
+    DocumentReference docRef = db.collection('Data').doc(documentPath);
+
+    docRef.set({'temp': true, 'tempDate': date});
+  } catch (e, s) {
+    printLog('Error al registrar actividad: $e');
+    printLog(s);
   }
 }
 

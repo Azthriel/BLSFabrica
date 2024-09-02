@@ -13,7 +13,6 @@ dependencies:
   http: ^1.1.2
   fluttertoast: ^8.2.4
   path_provider: ^2.1.1
-  share: ^2.0.4
   firebase_core: ^2.24.0
   cloud_firestore: ^4.13.3
   permission_handler: ^11.1.0
@@ -28,6 +27,7 @@ dependencies:
   aws_dynamodb_api: ^2.0.0
   fl_chart: ^0.68.0
   csv: ^6.0.0
+  share_plus: ^10.0.2
 
 dev_dependencies:
   flutter_test:
