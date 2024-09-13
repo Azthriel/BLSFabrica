@@ -54,6 +54,23 @@ class MenuPageState extends State<MenuPage> {
             backgroundColor: const Color(0xFF522B5B),
             foregroundColor: const Color(0xfffbe4d8),
             title: const Text('BSL Fábrica'),
+            actions: <Widget>[
+              if (legajoConectado == '1860') ...[
+                GestureDetector(
+                  onTap: () {
+                    showDialog<void>(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            backgroundColor: Colors.transparent,
+                            content: Image.asset('assets/puto.jpeg'),
+                          );
+                        });
+                  },
+                  child: Image.asset('assets/Mecha.gif'),
+                ),
+              ],
+            ],
             bottom: TabBar(
               labelColor: const Color(0xffdfb6b2),
               unselectedLabelColor: const Color(0xff190019),
@@ -167,7 +184,8 @@ class ScanTabState extends State<ScanTab> {
               'Módulo',
               'Roll',
               'Patito',
-              'Domótica'
+              'Domótica',
+              'Relé',
             ],
             timeout: const Duration(seconds: 30),
             androidUsesFineLocation: true,
@@ -609,7 +627,8 @@ class ToolsAWSState extends State<ToolsAWS> {
                           '027000_IOT',
                           '020010_IOT',
                           '041220_IOT',
-                          '015773_IOT'
+                          '015773_IOT',
+                          '027313_IOT',
                         ].map<DropdownMenuItem<String>>((String value) {
                           return DropdownMenuItem<String>(
                             value: value,
@@ -2296,6 +2315,8 @@ class LoadState extends State<LoadingPage> {
           navigatorKey.currentState?.pushReplacementNamed('/roller');
         } else if (deviceType == '019000' || deviceType == '027170') {
           navigatorKey.currentState?.pushReplacementNamed('/patito');
+        } else if (deviceType == '027313') {
+          navigatorKey.currentState?.pushReplacementNamed('/rele');
         }
       } else {
         showToast('Error en el dispositivo, intente nuevamente');
@@ -2333,7 +2354,8 @@ class LoadState extends State<LoadingPage> {
           tempMap = parts2[8] == '1';
         }
 
-        roomTempSended = await tempWasSended(command(deviceName), extractSerialNumber(deviceName));
+        roomTempSended = await tempWasSended(
+            command(deviceName), extractSerialNumber(deviceName));
 
         printLog('Estado: $turnOn');
       } else if (deviceType == '015773') {
@@ -2374,6 +2396,14 @@ class LoadState extends State<LoadingPage> {
         workingPosition = int.parse(parts2[7]);
         rollerMoving = parts2[8] == '1';
         awsInit = parts2[9] == '1';
+      } else if (deviceType == '027313') {
+        varsValues = await myDevice.varsUuid.read();
+        var parts2 = utf8.decode(varsValues).split(':');
+        printLog('Valores vars: $parts2');
+        distanceControlActive = parts2[0] == '1';
+        turnOn = parts2[1] == '1';
+        energyTimer = parts2[2];
+        awsInit = parts2[3] == '1';
       }
 
       return Future.value(true);
@@ -2393,14 +2423,18 @@ class LoadState extends State<LoadingPage> {
       body: Center(
         child: Stack(
           children: <Widget>[
-            const Column(
+            Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircularProgressIndicator(
-                  color: Color(0xfffbe4d8),
-                ),
-                SizedBox(height: 20),
-                Align(
+                legajoConectado == '1860'
+                    ? Image.asset('assets/Mecha.gif')
+                    : legajoConectado == '1799'
+                        ? Image.asset('assets/puto.jpeg')
+                        : const CircularProgressIndicator(
+                            color: Color(0xfffbe4d8),
+                          ),
+                const SizedBox(height: 20),
+                const Align(
                     alignment: Alignment.center,
                     child: Text(
                       'Cargando...',

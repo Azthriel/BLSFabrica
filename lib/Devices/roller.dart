@@ -110,7 +110,7 @@ class RollerTabState extends State<RollerTab> {
               : 2,
           child: PopScope(
             canPop: false,
-            onPopInvokedWithResult: (didPop, a)  {
+            onPopInvokedWithResult: (didPop, a) {
               showDialog(
                 context: context,
                 barrierDismissible: false,
@@ -1319,7 +1319,9 @@ class CredsTabState extends State<CredsTab> {
                     ? Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Image.asset('assets/Vaca.webp'),
+                          legajoConectado == '1860'
+                              ? Image.asset('assets/Mecha.gif')
+                              : Image.asset('assets/Vaca.webp'),
                           const LinearProgressIndicator(),
                         ],
                       )

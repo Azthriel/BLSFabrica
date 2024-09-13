@@ -4,6 +4,7 @@ import 'package:biocaldensmartlifefabrica/Devices/calefactores.dart';
 import 'package:biocaldensmartlifefabrica/Devices/detectores.dart';
 import 'package:biocaldensmartlifefabrica/Devices/iodevice.dart';
 import 'package:biocaldensmartlifefabrica/Devices/patito.dart';
+import 'package:biocaldensmartlifefabrica/Devices/rele.dart';
 import 'package:biocaldensmartlifefabrica/Devices/roller.dart';
 import 'package:biocaldensmartlifefabrica/firebase_options.dart';
 import 'package:biocaldensmartlifefabrica/login.dart';
@@ -77,6 +78,7 @@ class MyApp extends StatelessWidget {
         '/io': (context) => const IODevicesTab(),
         '/roller': (context) => const RollerTab(),
         '/patito':(context) => const PatitoTab(),
+        '/rele':(context) => const ReleTab(),
       },
     );
   }

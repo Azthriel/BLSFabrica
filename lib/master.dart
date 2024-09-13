@@ -98,6 +98,8 @@ bool burneoDone = false;
 bool roomTempSended = false;
 String tempDate = '';
 
+String energyTimer = '';
+
 // Si esta en modo profile.
 const bool xProfileMode = bool.fromEnvironment('dart.vm.profile');
 // Si esta en modo release.
@@ -107,7 +109,7 @@ const bool xDebugMode = !xProfileMode && !xReleaseMode;
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
-String appVersionNumber = '24090200';
+String appVersionNumber = '24091302';
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
@@ -159,10 +161,12 @@ String command(String device) {
     return '015773_IOT';
   } else if (device.contains('Radiador')) {
     return '041220_IOT';
-  } else if (device.contains('Módulo') || device.contains('Domótica')) {
+  } else if (device.contains('Domótica')) {
     return '020010_IOT';
   } else if (device.contains('Patito')) {
     return '027170_IOT';
+  } else if (device.contains('Relé')) {
+    return '027313_IOT';
   } else {
     return '';
   }
@@ -833,6 +837,19 @@ class MyDevice {
           patitoUuid = service.characteristics.firstWhere(
               (c) => c.uuid == Guid('03b1c5d9-534a-4980-aed3-f59615205216'));
           otaUuid = service.characteristics.firstWhere((c) =>
+              c.uuid ==
+              Guid(
+                  'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
+          break;
+        case '027313':
+          BluetoothService espService = services.firstWhere(
+              (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
+
+          varsUuid = espService.characteristics.firstWhere((c) =>
+              c.uuid ==
+              Guid(
+                  '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //DistanceControl:WorkingTemp:WorkingStatus:EnergyTimer:FlamingStatus:NightMode:actualTemp:Thing?:TempMap?:Offset
+          otaUuid = espService.characteristics.firstWhere((c) =>
               c.uuid ==
               Guid(
                   'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)

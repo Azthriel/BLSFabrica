@@ -779,7 +779,9 @@ class CredsTabState extends State<CredsTab> {
                     ? Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Image.asset('assets/Vaca.webp'),
+                          legajoConectado == '1860'
+                              ? Image.asset('assets/Mecha.gif')
+                              : Image.asset('assets/Vaca.webp'),
                           const LinearProgressIndicator(),
                         ],
                       )
