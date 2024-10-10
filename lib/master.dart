@@ -75,9 +75,8 @@ String deviceResponseMqtt = '';
 
 String rollerlength = '';
 String rollerPolarity = '';
-String motorSpeedUp = '';
-String motorSpeedDown = '';
-String contrapulseTime = '';
+String rollerRPM = '';
+String rollerMicroStep = '';
 int actualPosition = 0;
 int workingPosition = 0;
 bool rollerMoving = false;
@@ -109,7 +108,7 @@ const bool xDebugMode = !xProfileMode && !xReleaseMode;
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
-String appVersionNumber = '24091302';
+String appVersionNumber = '24101002';
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
@@ -167,7 +166,10 @@ String command(String device) {
     return '027170_IOT';
   } else if (device.contains('Relé')) {
     return '027313_IOT';
-  } else {
+  } else if(device.contains('Roll')){
+    return '024011_IOT';
+  }
+  else {
     return '';
   }
 }

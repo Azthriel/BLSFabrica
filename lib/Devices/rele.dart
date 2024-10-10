@@ -518,7 +518,6 @@ class ControlTabState extends State<ControlTab> {
   @override
   void initState() {
     super.initState();
-    printLog('Valor temp: $tempValue');
     printLog('¿Encendido? $turnOn');
     subscribeTrueStatus();
   }
