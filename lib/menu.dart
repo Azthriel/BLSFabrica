@@ -49,7 +49,7 @@ class MenuPageState extends State<MenuPage> {
             foregroundColor: const Color(0xfffbe4d8),
             title: const Text('BSL Fábrica'),
             actions: <Widget>[
-              if (legajoConectado == '1860') ...[
+              if (legajoConectado == '1860' || legajoConectado == '1750') ...[
                 GestureDetector(
                   onTap: () {
                     showDialog<void>(
@@ -61,7 +61,9 @@ class MenuPageState extends State<MenuPage> {
                           );
                         });
                   },
-                  child: Image.asset('assets/Mecha.gif'),
+                  child: Image.asset(legajoConectado == '1860'
+                      ? 'assets/Mecha.gif'
+                      : 'assets/cucaracha.gif'),
                 ),
               ],
             ],
@@ -1553,10 +1555,17 @@ class LoadState extends State<LoadingPage> {
         rollerPolarity = parts2[2];
         rollerRPM = parts2[3];
         rollerMicroStep = parts2[4];
-        actualPosition = int.parse(parts2[5]);
-        workingPosition = int.parse(parts2[6]);
-        rollerMoving = parts2[7] == '1';
-        awsInit = parts2[8] == '1';
+        rollerIMAX = parts2[5];
+        rollerIRMSRUN = parts2[6];
+        rollerIRMSHOLD = parts2[7];
+        rollerFreewheeling = parts2[8] == '1';
+        rollerTPWMTHRS = parts2[9];
+        rollerTCOOLTHRS = parts2[10];
+        rollerSGTHRS = parts2[11];
+        actualPosition = int.parse(parts2[12]);
+        workingPosition = int.parse(parts2[13]);
+        rollerMoving = parts2[14] == '1';
+        awsInit = parts2[15] == '1';
       } else if (deviceType == '027313') {
         varsValues = await myDevice.varsUuid.read();
         var parts2 = utf8.decode(varsValues).split(':');
@@ -1591,9 +1600,11 @@ class LoadState extends State<LoadingPage> {
                     ? Image.asset('assets/Mecha.gif')
                     : legajoConectado == '1799'
                         ? Image.asset('assets/puto.jpeg')
-                        : const CircularProgressIndicator(
-                            color: Color(0xfffbe4d8),
-                          ),
+                        : legajoConectado == '1750'
+                            ? Image.asset('assets/cucaracha.gif')
+                            : const CircularProgressIndicator(
+                                color: Color(0xfffbe4d8),
+                              ),
                 const SizedBox(height: 20),
                 const Align(
                     alignment: Alignment.center,

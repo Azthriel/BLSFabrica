@@ -68,7 +68,7 @@ class RollerTabState extends State<RollerTab> {
       }
     }
 
-    setState(() {});
+    context.mounted ? setState(() {}) : null;
   }
 
   void subscribeToWifiStatus() async {
@@ -488,7 +488,6 @@ class RollcontrolTab extends StatefulWidget {
 class RollcontrolTabState extends State<RollcontrolTab> {
   TextEditingController rLargeController = TextEditingController();
   TextEditingController workController = TextEditingController();
-  TextEditingController rpmController = TextEditingController();
 
   @override
   void initState() {
@@ -517,16 +516,19 @@ class RollcontrolTabState extends State<RollcontrolTab> {
 
   void setRange(int mm) {
     String data = '${command(deviceName)}[7]($mm)';
-    myDevice.toolsUuid.write(data.codeUnits);
-  }
-
-  void setcontrapulse(int ms) {
-    String data = '${command(deviceName)}[11]($ms)';
+    printLog(data);
     myDevice.toolsUuid.write(data.codeUnits);
   }
 
   void setDistance(int pc) {
     String data = '${command(deviceName)}[7]($pc%)';
+    printLog(data);
+    myDevice.toolsUuid.write(data.codeUnits);
+  }
+
+  void setRollerConfig(int type) {
+    String data = '${command(deviceName)}[8]($type)';
+    printLog(data);
     myDevice.toolsUuid.write(data.codeUnits);
   }
 
@@ -536,13 +538,39 @@ class RollcontrolTabState extends State<RollcontrolTab> {
     myDevice.toolsUuid.write(data.codeUnits);
   }
 
-  void setRollerConfig(int type) {
-    String data = '${command(deviceName)}[8]($type)';
+  void setMicroStep(String uStep) {
+    String data = '${command(deviceName)}[11]($uStep)';
+    printLog(data);
     myDevice.toolsUuid.write(data.codeUnits);
   }
 
-  void setMicroStep(String uStep) {
-    String data = '${command(deviceName)}[11]($uStep)';
+  void setMotorCurrent(bool run, String value) {
+    String data = '${command(deviceName)}[12](${run ? '1' : '0'}#$value)';
+    printLog(data);
+    myDevice.toolsUuid.write(data.codeUnits);
+  }
+
+  void setFreeWheeling(bool active) {
+    String data = '${command(deviceName)}[14](${active ? '1' : '0'})';
+    printLog(data);
+    myDevice.toolsUuid.write(data.codeUnits);
+  }
+
+  void setTPWMTHRS(String value) {
+    String data = '${command(deviceName)}[15]($value)';
+    printLog(data);
+    myDevice.toolsUuid.write(data.codeUnits);
+  }
+
+  void setTCOOLTHRS(String value) {
+    String data = '${command(deviceName)}[16]($value)';
+    printLog(data);
+    myDevice.toolsUuid.write(data.codeUnits);
+  }
+
+  void setSGTHRS(String value) {
+    String data = '${command(deviceName)}[17]($value)';
+    printLog(data);
     myDevice.toolsUuid.write(data.codeUnits);
   }
 
@@ -899,7 +927,7 @@ class RollcontrolTabState extends State<RollcontrolTab> {
                         rollerPolarity == '0'
                             ? rollerPolarity = '1'
                             : rollerPolarity = '0';
-                        setState(() {});
+                        context.mounted ? setState(() {}) : null;
                       },
                       child: const Text('Invertir')),
                   const SizedBox(
@@ -943,24 +971,30 @@ class RollcontrolTabState extends State<RollcontrolTab> {
                   ),
                   SizedBox(
                     width: 300,
-                    child: TextField(
-                      controller: rpmController,
-                      style: const TextStyle(color: Color(0xFFdfb6b2)),
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                          labelText: 'Modificar RPM:',
-                          labelStyle: TextStyle(
-                              color: Color(0xFFdfb6b2),
-                              fontWeight: FontWeight.bold)),
-                      onSubmitted: (value) {
-                        setState(() {
-                          rollerRPM = value;
-                        });
-                        setMotorSpeed(value);
-                        rpmController.clear();
-                      },
+                    child: SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 20.0,
+                        thumbColor: const Color(0xfffbe4d8),
+                        thumbShape: const IconThumbSlider(
+                          iconData: Icons.speed,
+                          thumbRadius: 20,
+                        ),
+                      ),
+                      child: Slider(
+                        min: 0,
+                        max: 400,
+                        value: double.parse(rollerRPM),
+                        onChanged: (value) {
+                          setState(() {
+                            rollerRPM = value.round().toString();
+                          });
+                        },
+                        onChangeEnd: (value) {
+                          setMotorSpeed(value.round().toString());
+                        },
+                      ),
                     ),
-                  ),
+                  )
                 ],
               ),
               const SizedBox(
@@ -1041,6 +1075,350 @@ class RollcontrolTabState extends State<RollcontrolTab> {
                     }
                   },
                 ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              const Divider(),
+              const SizedBox(
+                height: 10,
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  const Text(
+                    'Run current:',
+                    style: TextStyle(
+                        fontSize: 20.0,
+                        color: Color(0xfffbe4d8),
+                        fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  Text(
+                    '${((int.parse(rollerIRMSRUN) * 2100) / 31).round()} mA',
+                    style: const TextStyle(
+                      fontSize: 25.0,
+                      color: Color(0xFFdfb6b2),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  SizedBox(
+                    width: 300,
+                    child: SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 20.0,
+                        thumbColor: const Color(0xfffbe4d8),
+                        thumbShape: const IconThumbSlider(
+                          iconData: Icons.electric_bolt,
+                          thumbRadius: 20,
+                        ),
+                      ),
+                      child: Slider(
+                        min: 0,
+                        max: 31,
+                        value: double.parse(rollerIRMSRUN),
+                        onChanged: (value) {
+                          setState(() {
+                            rollerIRMSRUN = value.round().toString();
+                          });
+                        },
+                        onChangeEnd: (value) {
+                          setMotorCurrent(true, value.round().toString());
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              const Divider(),
+              const SizedBox(
+                height: 10,
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  const Text(
+                    'Hold current:',
+                    style: TextStyle(
+                        fontSize: 20.0,
+                        color: Color(0xfffbe4d8),
+                        fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  Text(
+                    '${((int.parse(rollerIRMSHOLD) * 2100) / 31).round()} mA',
+                    style: const TextStyle(
+                      fontSize: 25.0,
+                      color: Color(0xFFdfb6b2),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  SizedBox(
+                    width: 300,
+                    child: SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 20.0,
+                        thumbColor: const Color(0xfffbe4d8),
+                        thumbShape: const IconThumbSlider(
+                          iconData: Icons.electric_bolt,
+                          thumbRadius: 20,
+                        ),
+                      ),
+                      child: Slider(
+                        min: 0,
+                        max: 31,
+                        value: double.parse(rollerIRMSHOLD),
+                        onChanged: (value) {
+                          setState(() {
+                            rollerIRMSHOLD = value.round().toString();
+                          });
+                        },
+                        onChangeEnd: (value) {
+                          setMotorCurrent(false, value.round().toString());
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              const Divider(),
+              const SizedBox(
+                height: 10,
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  const Text(
+                    'Threshold PWM:',
+                    style: TextStyle(
+                        fontSize: 20.0,
+                        color: Color(0xfffbe4d8),
+                        fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  Text(
+                    rollerTPWMTHRS,
+                    style: const TextStyle(
+                      fontSize: 25.0,
+                      color: Color(0xFFdfb6b2),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  SizedBox(
+                    width: 300,
+                    child: TextField(
+                      style: const TextStyle(color: Color(0xFFdfb6b2)),
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Modificar:',
+                        labelStyle: TextStyle(
+                            color: Color(0xFFdfb6b2),
+                            fontWeight: FontWeight.bold),
+                      ),
+                      onSubmitted: (value) {
+                        if (int.parse(value) < 1048575 &&
+                            int.parse(value) > 0) {
+                          printLog('Añaseo $value');
+                          setTPWMTHRS(value);
+                        } else {
+                          showToast(
+                              'El valor no esta en el rango\n0 - 1048575');
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              const Divider(),
+              const SizedBox(
+                height: 10,
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  const Text(
+                    'Threshold COOL:',
+                    style: TextStyle(
+                        fontSize: 20.0,
+                        color: Color(0xfffbe4d8),
+                        fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  Text(
+                    rollerTCOOLTHRS,
+                    style: const TextStyle(
+                      fontSize: 25.0,
+                      color: Color(0xFFdfb6b2),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  SizedBox(
+                    width: 300,
+                    child: TextField(
+                      style: const TextStyle(color: Color(0xFFdfb6b2)),
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Modificar:',
+                        labelStyle: TextStyle(
+                            color: Color(0xFFdfb6b2),
+                            fontWeight: FontWeight.bold),
+                      ),
+                      onSubmitted: (value) {
+                        if (int.parse(value) < 1048575 &&
+                            int.parse(value) > 1) {
+                          setTCOOLTHRS(value);
+                        } else {
+                          showToast(
+                              'El valor no esta en el rango\n1 - 1048575');
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              const Divider(),
+              const SizedBox(
+                height: 10,
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  const Text(
+                    'SG Threshold:',
+                    style: TextStyle(
+                        fontSize: 20.0,
+                        color: Color(0xfffbe4d8),
+                        fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  Text(
+                    rollerSGTHRS,
+                    style: const TextStyle(
+                      fontSize: 25.0,
+                      color: Color(0xFFdfb6b2),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  SizedBox(
+                    width: 300,
+                    child: SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 20.0,
+                        thumbColor: const Color(0xfffbe4d8),
+                        thumbShape: const IconThumbSlider(
+                          iconData: Icons.catching_pokemon,
+                          thumbRadius: 20,
+                        ),
+                      ),
+                      child: Slider(
+                        min: 0,
+                        max: 255,
+                        value: double.parse(rollerSGTHRS),
+                        onChanged: (value) {
+                          setState(() {
+                            rollerSGTHRS = value.round().toString();
+                          });
+                        },
+                        onChangeEnd: (value) {
+                          setSGTHRS(value.round().toString());
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              const Divider(),
+              const SizedBox(
+                height: 10,
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  const Text(
+                    'Free Wheeling:',
+                    style: TextStyle(
+                        fontSize: 20.0,
+                        color: Color(0xfffbe4d8),
+                        fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  SizedBox(
+                    width: 300,
+                    child: Switch(
+                      activeColor: const Color(0xfffbe4d8),
+                      activeTrackColor: const Color(0xff854f6c),
+                      inactiveThumbColor: const Color(0xff854f6c),
+                      inactiveTrackColor: const Color(0xfffbe4d8),
+                      value: rollerFreewheeling,
+                      onChanged: (value) {
+                        setFreeWheeling(value);
+                        setState(() {
+                          rollerFreewheeling = value;
+                        });
+                      },
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(
                 height: 10,

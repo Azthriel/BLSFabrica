@@ -80,6 +80,13 @@ String rollerMicroStep = '';
 int actualPosition = 0;
 int workingPosition = 0;
 bool rollerMoving = false;
+String rollerIMAX = '';
+String rollerIRMSRUN = '';
+String rollerIRMSHOLD = '';
+bool rollerFreewheeling = false;
+String rollerTPWMTHRS = '';
+String rollerTCOOLTHRS = '';
+String rollerSGTHRS = '';
 
 String owner = '';
 String distanceOn = '';
@@ -108,7 +115,7 @@ const bool xDebugMode = !xProfileMode && !xReleaseMode;
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
-String appVersionNumber = '24101002';
+String appVersionNumber = '24101701';
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
