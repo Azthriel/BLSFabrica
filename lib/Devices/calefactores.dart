@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
@@ -722,6 +723,7 @@ class TempTabState extends State<TempTab> {
   bool ignite = false;
   bool recording = false;
   List<List<dynamic>> recordedData = [];
+  Timer? recordTimer;
 
   @override
   void initState() {
@@ -743,13 +745,6 @@ class TempTabState extends State<TempTab> {
         trueStatus = parts[0] == '1';
         actualTemp = parts[1];
       });
-
-      if (recording) {
-        recordedData.add([
-          DateTime.now(),
-          parts[1]
-        ]);
-      }
     });
 
     myDevice.device.cancelWhenDisconnected(trueStatusSub);
@@ -961,8 +956,18 @@ class TempTabState extends State<TempTab> {
                   recording = !recording;
                 });
                 if (!recording) {
+                  recordTimer?.cancel();
                   saveDataToCsv();
                   recordedData.clear();
+                } else {
+                  recordTimer = Timer.periodic(
+                    const Duration(seconds: 1),
+                    (Timer t) {
+                      if (recording) {
+                        recordedData.add([DateTime.now(), actualTemp]);
+                      }
+                    },
+                  );
                 }
               },
               icon: recording
