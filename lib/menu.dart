@@ -170,14 +170,16 @@ class ScanTabState extends State<ScanTab> {
         await FlutterBluePlus.startScan(
             withKeywords: [
               'Eléctrico',
+              'Electrico',
               'Gas',
               'Detector',
               'Radiador',
-              'Módulo',
               'Roll',
               'Patito',
               'Domótica',
+              'Domotica',
               'Relé',
+              'Rele',
             ],
             timeout: const Duration(seconds: 30),
             androidUsesFineLocation: true,

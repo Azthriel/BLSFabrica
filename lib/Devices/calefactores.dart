@@ -5,8 +5,10 @@ import 'dart:typed_data';
 import 'package:biocaldensmartlifefabrica/aws/dynamo/dynamo.dart';
 import 'package:biocaldensmartlifefabrica/aws/dynamo/dynamo_certificates.dart';
 import 'package:biocaldensmartlifefabrica/master.dart';
+import 'package:csv/csv.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 class CalefactoresTab extends StatefulWidget {
   const CalefactoresTab({super.key});
@@ -718,6 +720,8 @@ class TempTabState extends State<TempTab> {
       TextEditingController(text: distanceOff);
 
   bool ignite = false;
+  bool recording = false;
+  List<List<dynamic>> recordedData = [];
 
   @override
   void initState() {
@@ -739,6 +743,13 @@ class TempTabState extends State<TempTab> {
         trueStatus = parts[0] == '1';
         actualTemp = parts[1];
       });
+
+      if (recording) {
+        recordedData.add([
+          DateTime.now(),
+          parts[1]
+        ]);
+      }
     });
 
     myDevice.device.cancelWhenDisconnected(trueStatusSub);
@@ -763,6 +774,24 @@ class TempTabState extends State<TempTab> {
   void startTempMap() {
     String data = '${command(deviceName)}[12](0)';
     myDevice.toolsUuid.write(data.codeUnits);
+  }
+
+  void saveDataToCsv() async {
+    List<List<dynamic>> rows = [
+      [
+        "Timestamp",
+        "Temperatura",
+      ]
+    ];
+    rows.addAll(recordedData);
+
+    String csvData = const ListToCsvConverter().convert(rows);
+    final directory = await getApplicationDocumentsDirectory();
+    final pathOfTheFileToWrite = '${directory.path}/temp_data.csv';
+    File file = File(pathOfTheFileToWrite);
+    await file.writeAsString(csvData);
+
+    await Share.shareXFiles([XFile(file.path)], text: 'CSV TEMPERATURA');
   }
 
   @override
@@ -924,6 +953,29 @@ class TempTabState extends State<TempTab> {
                   ),
                 ],
               ),
+            ),
+            const SizedBox(height: 10),
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  recording = !recording;
+                });
+                if (!recording) {
+                  saveDataToCsv();
+                  recordedData.clear();
+                }
+              },
+              icon: recording
+                  ? const Icon(
+                      Icons.pause,
+                      size: 35,
+                      color: Color(0xffdfb6b2),
+                    )
+                  : const Icon(
+                      Icons.play_arrow,
+                      size: 35,
+                      color: Color(0xffdfb6b2),
+                    ),
             ),
             if (factoryMode) ...[
               const SizedBox(height: 10),

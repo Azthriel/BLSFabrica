@@ -115,7 +115,7 @@ const bool xDebugMode = !xProfileMode && !xReleaseMode;
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
-String appVersionNumber = '24101701';
+String appVersionNumber = '24112101';
 
 //!------------------------------VERSION NUMBER---------------------------------------
 
@@ -159,7 +159,7 @@ Future<void> sendWifitoBle() async {
 }
 
 String command(String device) {
-  if (device.contains('Eléctrico')) {
+  if (device.contains('Eléctrico') || device.contains('Electrico')) {
     return '022000_IOT';
   } else if (device.contains('Gas')) {
     return '027000_IOT';
@@ -167,16 +167,15 @@ String command(String device) {
     return '015773_IOT';
   } else if (device.contains('Radiador')) {
     return '041220_IOT';
-  } else if (device.contains('Domótica')) {
+  } else if (device.contains('Domótica') || device.contains('Domotica')) {
     return '020010_IOT';
   } else if (device.contains('Patito')) {
     return '027170_IOT';
-  } else if (device.contains('Relé')) {
+  } else if (device.contains('Relé') || device.contains('Rele')) {
     return '027313_IOT';
-  } else if(device.contains('Roll')){
+  } else if (device.contains('Roll')) {
     return '024011_IOT';
-  }
-  else {
+  } else {
     return '';
   }
 }

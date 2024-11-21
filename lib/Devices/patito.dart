@@ -518,26 +518,27 @@ class ListTabState extends State<ListTab> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             IconButton(
-                onPressed: () {
-                  setState(() {
-                    recording = !recording;
-                  });
-                  if (!recording) {
-                    saveDataToCsv();
-                    recordedData.clear();
-                  }
-                },
-                icon: recording
-                    ? const Icon(
-                        Icons.pause,
-                        size: 35,
-                        color: Color(0xffdfb6b2),
-                      )
-                    : const Icon(
-                        Icons.play_arrow,
-                        size: 35,
-                        color: Color(0xffdfb6b2),
-                      )),
+              onPressed: () {
+                setState(() {
+                  recording = !recording;
+                });
+                if (!recording) {
+                  saveDataToCsv();
+                  recordedData.clear();
+                }
+              },
+              icon: recording
+                  ? const Icon(
+                      Icons.pause,
+                      size: 35,
+                      color: Color(0xffdfb6b2),
+                    )
+                  : const Icon(
+                      Icons.play_arrow,
+                      size: 35,
+                      color: Color(0xffdfb6b2),
+                    ),
+            ),
             createChart('Aceleración X', dates, aceleracionX),
             createChart('Giro X', dates, giroX),
             createChart('Aceleración Y', dates, aceleracionY),
@@ -561,11 +562,14 @@ class ListTabState extends State<ListTab> {
       padding: const EdgeInsets.all(8.0),
       child: Column(
         children: [
-          Text(title,
-              style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xffdfb6b2))),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xffdfb6b2),
+            ),
+          ),
           SizedBox(
             height: 200,
             width: width - 20,
@@ -574,11 +578,21 @@ class ListTabState extends State<ListTab> {
                 minY: -15.0,
                 maxY: 15.0,
                 borderData: FlBorderData(
-                    border: const Border(
-                        top: BorderSide(color: Color(0xffdfb6b2)),
-                        bottom: BorderSide(color: Color(0xffdfb6b2)),
-                        right: BorderSide(color: Color(0xffdfb6b2)),
-                        left: BorderSide(color: Color(0xffdfb6b2)))),
+                  border: const Border(
+                    top: BorderSide(
+                      color: Color(0xffdfb6b2),
+                    ),
+                    bottom: BorderSide(
+                      color: Color(0xffdfb6b2),
+                    ),
+                    right: BorderSide(
+                      color: Color(0xffdfb6b2),
+                    ),
+                    left: BorderSide(
+                      color: Color(0xffdfb6b2),
+                    ),
+                  ),
+                ),
                 titlesData: FlTitlesData(
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
@@ -588,7 +602,9 @@ class ListTabState extends State<ListTab> {
                           return Text(
                             value.round().toString(),
                             style: const TextStyle(
-                                color: Color(0xfffbe4d8), fontSize: 10),
+                              color: Color(0xfffbe4d8),
+                              fontSize: 10,
+                            ),
                           );
                         } else {
                           return const Text('');
@@ -609,8 +625,12 @@ class ListTabState extends State<ListTab> {
                       getTitlesWidget: (value, meta) {
                         int index = value.toInt();
                         if (index >= 0 && index < dates.length) {
-                          return Text('${dates[index].second}',
-                              style: const TextStyle(color: Color(0xfffbe4d8)));
+                          return Text(
+                            '${dates[index].second}',
+                            style: const TextStyle(
+                              color: Color(0xfffbe4d8),
+                            ),
+                          );
                         }
                         return const Text('');
                       },
@@ -622,19 +642,26 @@ class ListTabState extends State<ListTab> {
                 ),
                 lineBarsData: [
                   LineChartBarData(
-                      isCurved: true,
-                      color: const Color(0xFF522B5B),
-                      spots: values
-                          .asMap()
-                          .entries
-                          .map((e) => FlSpot(e.key.toDouble(), e.value))
-                          .toList(),
-                      barWidth: 2,
-                      belowBarData: BarAreaData(
-                          show: true, color: const Color(0xFFFFFFFF)),
-                      aboveBarData: BarAreaData(
-                          show: true, color: const Color(0xFFFFFFFF)),
-                      dotData: const FlDotData(show: false)),
+                    isCurved: true,
+                    color: const Color(0xFF522B5B),
+                    spots: values
+                        .asMap()
+                        .entries
+                        .map(
+                          (e) => FlSpot(e.key.toDouble(), e.value),
+                        )
+                        .toList(),
+                    barWidth: 2,
+                    belowBarData: BarAreaData(
+                      show: true,
+                      color: const Color(0xFFFFFFFF),
+                    ),
+                    aboveBarData: BarAreaData(
+                      show: true,
+                      color: const Color(0xFFFFFFFF),
+                    ),
+                    dotData: const FlDotData(show: false),
+                  ),
                 ],
               ),
             ),

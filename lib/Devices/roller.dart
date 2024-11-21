@@ -771,13 +771,14 @@ class RollcontrolTabState extends State<RollcontrolTab> {
                 height: 10,
               ),
               ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      workingPosition = 0;
-                    });
-                    setRollerConfig(0);
-                  },
-                  child: const Text('Setear punto 0')),
+                onPressed: () {
+                  setState(() {
+                    workingPosition = 0;
+                  });
+                  setRollerConfig(0);
+                },
+                child: const Text('Setear punto 0'),
+              ),
               const SizedBox(
                 height: 10,
               ),
@@ -816,7 +817,7 @@ class RollcontrolTabState extends State<RollcontrolTab> {
                             width: 5,
                           ),
                           const Text(
-                            'mm',
+                            '° (grados)',
                             style: TextStyle(
                                 fontSize: 20.0,
                                 color: Color(0xfffbe4d8),
@@ -828,64 +829,65 @@ class RollcontrolTabState extends State<RollcontrolTab> {
                   ),
                   const Spacer(),
                   ElevatedButton(
-                      onPressed: () {
-                        showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                title: const Text('Modificar largo (mm)'),
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    TextField(
-                                      controller: rLargeController,
-                                      keyboardType: TextInputType.number,
-                                      decoration: const InputDecoration(
-                                          label: Text(
-                                        'Ingresar tamaño:',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.normal),
-                                      )),
-                                      onSubmitted: (value) {
-                                        int? valor =
-                                            int.tryParse(rLargeController.text);
-                                        if (valor != null) {
-                                          setRange(valor);
-                                          setState(() {
-                                            rollerlength = value;
-                                          });
-                                        } else {
-                                          showToast('Valor no permitido');
-                                        }
-                                        rLargeController.clear();
-                                        navigatorKey.currentState?.pop();
-                                      },
-                                    ),
-                                  ],
-                                ),
-                                actions: [
-                                  TextButton(
-                                      onPressed: () {
-                                        int? valor =
-                                            int.tryParse(rLargeController.text);
-                                        if (valor != null) {
-                                          setRange(valor);
-                                          setState(() {
-                                            rollerlength =
-                                                rLargeController.text;
-                                          });
-                                        } else {
-                                          showToast('Valor no permitido');
-                                        }
-                                        rLargeController.clear();
-                                        navigatorKey.currentState?.pop();
-                                      },
-                                      child: const Text('Modificar'))
+                    onPressed: () {
+                      showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: const Text('Modificar largo ([°] grados)'),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  TextField(
+                                    controller: rLargeController,
+                                    keyboardType: TextInputType.number,
+                                    decoration: const InputDecoration(
+                                        label: Text(
+                                      'Ingresar tamaño:',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.normal),
+                                    )),
+                                    onSubmitted: (value) {
+                                      int? valor =
+                                          int.tryParse(rLargeController.text);
+                                      if (valor != null) {
+                                        setRange(valor);
+                                        setState(() {
+                                          rollerlength = value;
+                                        });
+                                      } else {
+                                        showToast('Valor no permitido');
+                                      }
+                                      rLargeController.clear();
+                                      navigatorKey.currentState?.pop();
+                                    },
+                                  ),
                                 ],
-                              );
-                            });
-                      },
-                      child: const Text('Modificar')),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    int? valor =
+                                        int.tryParse(rLargeController.text);
+                                    if (valor != null) {
+                                      setRange(valor);
+                                      setState(() {
+                                        rollerlength = rLargeController.text;
+                                      });
+                                    } else {
+                                      showToast('Valor no permitido');
+                                    }
+                                    rLargeController.clear();
+                                    navigatorKey.currentState?.pop();
+                                  },
+                                  child: const Text('Modificar'),
+                                )
+                              ],
+                            );
+                          });
+                    },
+                    child: const Text('Modificar'),
+                  ),
                   const SizedBox(
                     width: 10,
                   ),
@@ -906,9 +908,10 @@ class RollcontrolTabState extends State<RollcontrolTab> {
                   const Text(
                     'Polaridad del Roller:',
                     style: TextStyle(
-                        fontSize: 20.0,
-                        color: Color(0xfffbe4d8),
-                        fontWeight: FontWeight.bold),
+                      fontSize: 20.0,
+                      color: Color(0xfffbe4d8),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(
                     width: 10,
@@ -916,20 +919,22 @@ class RollcontrolTabState extends State<RollcontrolTab> {
                   Text(
                     rollerPolarity,
                     style: const TextStyle(
-                        fontSize: 25.0,
-                        color: Color(0xFFdfb6b2),
-                        fontWeight: FontWeight.bold),
+                      fontSize: 25.0,
+                      color: Color(0xFFdfb6b2),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const Spacer(),
                   ElevatedButton(
-                      onPressed: () {
-                        setRollerConfig(1);
-                        rollerPolarity == '0'
-                            ? rollerPolarity = '1'
-                            : rollerPolarity = '0';
-                        context.mounted ? setState(() {}) : null;
-                      },
-                      child: const Text('Invertir')),
+                    onPressed: () {
+                      setRollerConfig(1);
+                      rollerPolarity == '0'
+                          ? rollerPolarity = '1'
+                          : rollerPolarity = '0';
+                      context.mounted ? setState(() {}) : null;
+                    },
+                    child: const Text('Invertir'),
+                  ),
                   const SizedBox(
                     width: 10,
                   ),
@@ -951,9 +956,10 @@ class RollcontrolTabState extends State<RollcontrolTab> {
                   const Text(
                     'RPM del motor:',
                     style: TextStyle(
-                        fontSize: 20.0,
-                        color: Color(0xfffbe4d8),
-                        fontWeight: FontWeight.bold),
+                      fontSize: 20.0,
+                      color: Color(0xfffbe4d8),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(
                     width: 10,
@@ -980,19 +986,37 @@ class RollcontrolTabState extends State<RollcontrolTab> {
                           thumbRadius: 20,
                         ),
                       ),
-                      child: Slider(
-                        min: 0,
-                        max: 400,
-                        value: double.parse(rollerRPM),
-                        onChanged: (value) {
+                      child: TextField(
+                        style: const TextStyle(color: Color(0xFFdfb6b2)),
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Modificar:',
+                          labelStyle: TextStyle(
+                            color: Color(0xFFdfb6b2),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        onSubmitted: (value) {
                           setState(() {
-                            rollerRPM = value.round().toString();
+                            rollerRPM = value;
                           });
-                        },
-                        onChangeEnd: (value) {
-                          setMotorSpeed(value.round().toString());
+                          printLog('Modifico RPM a $value');
+                          setMotorSpeed(value);
                         },
                       ),
+                      // Slider(
+                      //   min: 0,
+                      //   max: 400,
+                      //   value: double.parse(rollerRPM),
+                      //   onChanged: (value) {
+                      //     setState(() {
+                      //       rollerRPM = value.round().toString();
+                      //     });
+                      //   },
+                      //   onChangeEnd: (value) {
+                      //     setMotorSpeed(value.round().toString());
+                      //   },
+                      // ),
                     ),
                   )
                 ],
@@ -1246,8 +1270,8 @@ class RollcontrolTabState extends State<RollcontrolTab> {
                             fontWeight: FontWeight.bold),
                       ),
                       onSubmitted: (value) {
-                        if (int.parse(value) < 1048575 &&
-                            int.parse(value) > 0) {
+                        if (int.parse(value) <= 1048575 &&
+                            int.parse(value) >= 0) {
                           printLog('Añaseo $value');
                           setTPWMTHRS(value);
                         } else {
@@ -1305,8 +1329,8 @@ class RollcontrolTabState extends State<RollcontrolTab> {
                             fontWeight: FontWeight.bold),
                       ),
                       onSubmitted: (value) {
-                        if (int.parse(value) < 1048575 &&
-                            int.parse(value) > 1) {
+                        if (int.parse(value) <= 1048575 &&
+                            int.parse(value) >= 1) {
                           setTCOOLTHRS(value);
                         } else {
                           showToast(
@@ -1353,29 +1377,46 @@ class RollcontrolTabState extends State<RollcontrolTab> {
                   ),
                   SizedBox(
                     width: 300,
-                    child: SliderTheme(
-                      data: SliderTheme.of(context).copyWith(
-                        trackHeight: 20.0,
-                        thumbColor: const Color(0xfffbe4d8),
-                        thumbShape: const IconThumbSlider(
-                          iconData: Icons.catching_pokemon,
-                          thumbRadius: 20,
-                        ),
+                    child: TextField(
+                      style: const TextStyle(color: Color(0xFFdfb6b2)),
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Modificar:',
+                        labelStyle: TextStyle(
+                            color: Color(0xFFdfb6b2),
+                            fontWeight: FontWeight.bold),
                       ),
-                      child: Slider(
-                        min: 0,
-                        max: 255,
-                        value: double.parse(rollerSGTHRS),
-                        onChanged: (value) {
-                          setState(() {
-                            rollerSGTHRS = value.round().toString();
-                          });
-                        },
-                        onChangeEnd: (value) {
-                          setSGTHRS(value.round().toString());
-                        },
-                      ),
+                      onSubmitted: (value) {
+                        setState(() {
+                          rollerSGTHRS = value;
+                        });
+                        printLog('Modifique SG Threshold: $value');
+                        setSGTHRS(value);
+                      },
                     ),
+                    // SliderTheme(
+                    //   data: SliderTheme.of(context).copyWith(
+                    //     trackHeight: 20.0,
+                    //     thumbColor: const Color(0xfffbe4d8),
+                    //     thumbShape: const IconThumbSlider(
+                    //       iconData: Icons.catching_pokemon,
+                    //       thumbRadius: 20,
+                    //     ),
+                    //   ),
+                    //   child: Slider(
+                    //     min: 0,
+                    //     max: 255,
+                    //     value: double.parse(rollerSGTHRS),
+                    //     onChanged: (value) {
+                    //       setState(() {
+                    //         rollerSGTHRS = value.round().toString();
+                    //       });
+                    //     },
+                    //     onChangeEnd: (value) {
+                    //       setSGTHRS(value.round().toString());
+                    //     },
+                    //   ),
+                    // ),
                   ),
                 ],
               ),
